@@ -13,10 +13,7 @@ for counter=1:stepSize:length(data(:,1))
     %OLS fit to specific chunk
     designX = genSineSeed(data(counter:(counter+modStep),1),inFreq);
     [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter:(counter+modStep),2),designX);
-    %I think this works
-    if (sChkSigma == 0)
-      sChkSigma = 1;
-    endif
+
     %Assigns variance to all points in the chunk
     sineSTDev(counter:(counter+modStep),1) = sChkSigma.*ones(modStep+1,1);
     modStep=stepSize;
