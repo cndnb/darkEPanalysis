@@ -9,6 +9,8 @@ startFreq = 1e-3;
 stopFreq = 50e-3;
 %Bin size for the coherent average
 dataCut = 100000;
+%Maximum Error Threshold
+threshold = 2e-11;
 
 %Sets up the correct size arrays
 ampFreq = zeros((stopFreq-startFreq)/(jump*(1/dataCut)),7);
@@ -17,8 +19,11 @@ ampError = zeros((stopFreq-startFreq)/(jump*(1/dataCut)),7);
 %Begins sorting into bins for coherent average
 count = 1;
 for j=1:(dataCut):length(driftFix)-dataCut
-%Sums each data cut into one array
-[sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,jump,startFreq,stopFreq);
+%This takes a bin and returns the amplitude and variances of the sine components.
+[sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,...
+jump,startFreq,stopFreq,threshold);
+
+%Adds the new value to the bin, and counts to perform the average.
 ampFreq = ampFreq + sAmp;
 ampError = ampError + 1./sVar;
 count = count + 1
