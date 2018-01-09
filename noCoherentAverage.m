@@ -45,14 +45,14 @@ startFreq = 1e-6;
 %End frequency scan
 stopFreq = 1e-1;
 %How many points are included in the coherent average bins
-dataCut = 100000;
+dataCut = rows(driftFix);
 
 %endCount is the #rows of frequency matrix
 endCount = (stopFreq-startFreq)/(jump*(1/dataCut));
 %Creates plotting array
-ampFreq = zeros(endCount,7);
+ampFreq = zeros(endCount,2);
 %Creates error array
-ampError = zeros(endCount,7);
+ampError = zeros(endCount,2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,44 +62,42 @@ for i = 1:endCount
 endfor
 ampError(:,1) = ampFreq(:,1);
 
-%Counts # runs for end average
-counter = 0;
-%Runs the fitter over each bin to find the amplitude at each frequency
-length(driftFix)-dataCut
-for j=1:(dataCut):length(driftFix)-dataCut
-  j
-  fflush(stdout);
-%Sums each bin into one array
-[sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,jump,startFreq,endCount);
-ampFreq(:,2:7) = ampFreq(:,2:7) + sAmp;
-ampError(:,2:7) = ampError(:,2:7) + 1./sVar;
-counter = counter + 1;
-endfor
-%Divides by the number of sums for the average value/error
-ampFreq(:,2:7) = ampFreq(:,2:7)./counter;
-ampError(:,2:7)= sqrt(1./ampError(:,2:7));
 
 %Initializes the response function for each frequency of the amplitudes
 tau = ones(rows(ampFreq),1);
 for count = 1:rows(ampFreq)
 tau(count,1) = (1/kappa)/((1-(ampFreq(count,1)/f0)^2)+((i*ampFreq(count,1))/(Q*f0)));
 endfor
+'start'
+startFreq
+'stop'
+stopFreq
 
-%Creates array for final data
-FINALAMP = ones(rows(ampFreq),5);
-FINALERR = ones(rows(ampError),5);
-for count = 1:rows(ampFreq)
-%Sums in quadrature the averaged sine/cosine amplitudes (inner product)
-FINALAMP(count,:) = [ampFreq(count,1),abs(real(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(count))),...
-abs(real(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/tau(count))),...
-abs(real(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/tau(count))),...
-abs(real(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/tau(count)))];
+for i = 1:rows(ampFreq)
+  ampFreq(i,1)
+  fflush(stdout);
+  [BETA,ERR]=powerFinder(driftFix,ampFreq(i,1),chunkSize);
+  ampFreq(i,2) = abs(real(sqrt((BETA*BETA'))/tau(i)));
 endfor
 
-%Plots torque power as a function of frequency
 figure(1);
-loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
-legend('Parallel to gamma','Perpendicular to gamma','z component','Sum');
-xlabel('Frequency (Hz)');
-ylabel('Amplitude (theta)');
-title('Amplitude vs frequency');
+loglog(ampFreq(:,1),ampFreq(:,2));
+
+%%Creates array for final data
+%FINALAMP = ones(rows(ampFreq),2);
+%FINALERR = ones(rows(ampError),2);
+%for count = 1:rows(ampFreq)
+%%Sums in quadrature the averaged sine/cosine amplitudes (inner product)
+%FINALAMP(count,:) = [ampFreq(count,1),abs(real(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(count))),...
+%abs(real(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/tau(count))),...
+%abs(real(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/tau(count))),...
+%abs(real(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/tau(count)))];
+%endfor
+
+%%Plots torque power as a function of frequency
+%figure(1);
+%loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
+%legend('Parallel to gamma','Perpendicular to gamma','z component','Sum');
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N*m)');
+%title('Torque vs frequency');

@@ -13,8 +13,11 @@ function [retB,retC] = weightedOLS(t,Y,sigma,f)
   Z = X' * W * X;
 
   BETA = inv (Z) * X' * W * Y;
+  
+  %This is the error on the amplitude fit parameters.
   COV = inv(Z);
-  %out = [t, X*BETA];
+  
+  
   retB = BETA;
   retC = COV;
 endfunction
