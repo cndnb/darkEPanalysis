@@ -1,4 +1,4 @@
-function [ampFreq,ampError] = fakeDarkEPanalysis(data,chunkSize, jump, startFreq, stopFreq)
+function [AMPOUT,AMPVAR] = fakeDarkEPanalysis(data,chunkSize, jump, startFreq, endCount)
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -16,16 +16,17 @@ T = 273+24;
 kappa = (2*pi*f0)^2 * I;
 
 %Variables important to fitting
-endCount = (stopFreq-startFreq)/(jump*(1/length(data)));
 %Creates plotting array
-ampFreq = ones((stopFreq-startFreq)/(jump*(1/length(data))),7);
+ampFreq = ones(endCount,7);
 %Creates error array
-ampVar = ones((stopFreq-startFreq)/(jump*(1/length(data))),7);
+ampVar = ones(endCount,7);
 for count = 1:endCount
-[BETA, COV] = powerFinder(data,...
-(startFreq+(count*jump*(1/length(data)))),chunkSize);
-ampFreq(count,:) = [(startFreq+(count*jump*(1/length(data)))),BETA];
-ampVar(count,:) = [(startFreq+(count*jump*(1/length(data)))),COV];
+  count
+  fflush(stdout);
+[BETA,COV] = specFreqPower(data,...
+(startFreq+((count-1)*jump*(1/rows(data)))),chunkSize);
+ampFreq(count,:) = [(startFreq+((count-1)*jump*(1/rows(data)))),BETA];
+ampVar(count,:) = [(startFreq+((count-1)*jump*(1/rows(data)))),COV];
 
 endfor
 AMPOUT = ampFreq;

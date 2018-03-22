@@ -1,4 +1,33 @@
-function ret = frequencyVariance(data,inFreq,chunkLength)
+%This function creates a weight value depending on the chi squared spread of the data
+function weightVal = frequencyVariance(data,inFreq,chunkLength)
+%Step size is chunk length periods of the frequency
+stepSize = ceil(chunkLength*(1/inFreq));
+%Number of steps that fit evenly into the chunk
+evenDivisible = floor(rows(data)/stepSize);
+%Finds the remainder and subtracts from total to find end value for whole divisions
+endValue = rows(data) - (rows(data) - (evenDivisible*stepSize));
+
+betaValues = ones(evenDivisible,3);
+sineSTDev = ones(rows(data),1);
+count = 0;
+for counter = 1:stepSize:endValue
+    if (counter+stepSize > endValue)
+      break;
+    endif
+    count = count+1;
+    designX = createSineComponents(data(counter:(counter+stepSize),1),inFreq);
+    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter:(counter+stepSize),2),designX);
+    sineSTDev(counter:(counter+stepSize),1) = sChkSigma.*ones(stepSize+1,1);
+endfor
+sineSTDev(endValue:rows(sineSTDev),1) = sineSTDev(endValue).*ones(rows(sineSTDev)-endValue+1,1);
+
+%Returns the completed array of variances
+weightVal = sineSTDev;
+
+
+endfunction
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%OLD CODE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Specifies a round number based on input frequency for length of fit
 stepSize = ceil(chunkLength*(1/inFreq));
@@ -27,7 +56,5 @@ for counter=1:stepSize:length(data(:,1))
     
 endfor
 
-%Returns the completed array of variances
-ret = sineSTDev;
 
-endfunction
+
