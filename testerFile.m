@@ -39,16 +39,19 @@ kappa = (2*pi*f0)^2 * I;
 %How many periods of the specific frequency are included in error fit
 chunkSize = 50;
 %Multiples of smallest usable frequency between amplitude points
-jump = 100;
+jump = 1;
 %Start of frequency scan
-startFreq = 1e-6;
+startFreq = 1e-3;
 %End frequency scan
-stopFreq = 1e-1;
+stopFreq = 1e-2;
 %How many points are included in the coherent average bins
-dataCut = 100000;
+dataDivisions = 15;
+dataCut = floor((rows(driftFix)-1)/dataDivisions);
 
 %endCount is the #rows of frequency matrix
-endCount = (stopFreq-startFreq)/(jump*(1/dataCut));
+endCount = floor((stopFreq-startFreq)/(jump*(1/dataCut)))
+%Creates array to collect values for mean/stdev
+valueStuff = zeros(endCount,6*dataDivisions);
 %Creates plotting array
 ampFreq = zeros(endCount,7);
 %Creates error array
@@ -62,22 +65,30 @@ for i = 1:endCount
 endfor
 ampError(:,1) = ampFreq(:,1);
 
-%Counts # runs for end average
-counter = 0;
+i = 1;
 %Runs the fitter over each bin to find the amplitude at each frequency
-length(driftFix)-dataCut
-for j=1:(dataCut):length(driftFix)-dataCut
+for j=1:(dataCut):(dataDivisions*dataCut)
   j
   fflush(stdout);
-%Sums each bin into one array
-[sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,jump,startFreq,endCount);
-ampFreq(:,2:7) = ampFreq(:,2:7) + sAmp;
-ampError(:,2:7) = ampError(:,2:7) + 1./sVar;
-counter = counter + 1;
+  
+  %Sums each bin into one array
+  [sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,jump,startFreq,endCount);
+  valueStuff(:,6*i-5:6*i) = sAmp(:,2:7);
+  i=i+1;
 endfor
-%Divides by the number of sums for the average value/error
-ampFreq(:,2:7) = ampFreq(:,2:7)./counter;
-ampError(:,2:7)= sqrt(1./ampError(:,2:7));
+
+%Sums values over each bin and then averages for the mean
+for i=1:dataDivisions
+  ampFreq(:,2:7) = ampFreq(:,2:7) + valueStuff(:,6*i-5:6*i);
+endfor
+ampFreq(:,2:7) = ampFreq(:,2:7)./dataDivisions;
+
+%Sums (x-mean(x))^2 and then divides by N-1 takes the sqrt
+for j=1:dataDivisions
+  ampError(:,2:7) = ampError(:,2:7) + (valueStuff(:,6*i-5:6*i).-ampFreq(:,2:7)).^2;
+endfor
+ampError(:,2:7) = sqrt(ampError(:,2:7)./(dataDivisions-1));
+
 
 %Initializes the response function for each frequency of the amplitudes
 tau = ones(rows(ampFreq),1);
@@ -90,16 +101,47 @@ FINALAMP = ones(rows(ampFreq),5);
 FINALERR = ones(rows(ampError),5);
 for count = 1:rows(ampFreq)
 %Sums in quadrature the averaged sine/cosine amplitudes (inner product)
-FINALAMP(count,:) = [ampFreq(count,1),abs(real(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(count))),...
-abs(real(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/tau(count))),...
-abs(real(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/tau(count))),...
-abs(real(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/tau(count)))];
+FINALAMP(count,:) = [ampFreq(count,1),abs(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(count)),...
+abs(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/tau(count)),...
+abs(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/tau(count)),...
+abs(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/tau(count))];
+
+FINALERR(count,2) = abs(sqrt(((ampFreq(count,3)^2)./(ampFreq(count,3)^2+ampFreq(count,5)^2))*ampError(count,3)^2 ...
++((ampFreq(count,5)^2)./(ampFreq(count,3)^2+ampFreq(count,5)^2))*ampError(count,5)^2)/tau(count)); 
+FINALERR(count,3) = abs(sqrt(((ampFreq(count,2)^2)./(ampFreq(count,2)^2+ampFreq(count,4)^2))*ampError(count,2)^2 ...
++((ampFreq(count,4)^2)./(ampFreq(count,2)^2+ampFreq(count,4)^2))*ampError(count,4)^2)/tau(count));
+FINALERR(count,4) = abs(sqrt(((ampFreq(count,6)^2)./(ampFreq(count,6)^2+ampFreq(count,7)^2))*ampError(count,6)^2 ...
++((ampFreq(count,7)^2)./(ampFreq(count,6)^2+ampFreq(count,7)^2))*ampError(count,7)^2)/tau(count));
 endfor
+
+FINALERR(:,1) = FINALAMP(:,1);
 
 %Plots torque power as a function of frequency
 figure(1);
-loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
-legend('Parallel to gamma','Perpendicular to gamma','z component','Sum');
+loglogerr(FINALAMP(:,1),FINALAMP(:,2),FINALERR(:,2));
 xlabel('Frequency (Hz)');
-ylabel('Amplitude (theta)');
-title('Amplitude vs frequency');
+ylabel('Torque (N m)');
+title('Torque vs frequency parallel to gamma');
+
+figure(2);
+loglogerr(FINALAMP(:,1),FINALAMP(:,3),FINALERR(:,3));
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency perpendicular to gamma');
+
+figure(3);
+loglogerr(FINALAMP(:,1),FINALAMP(:,4),FINALERR(:,4));
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency in the z component');
+
+figure(4);
+loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
+%legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency');
+
+
+%Index of specific frequency:
+%i = floor((freq - startFreq)*dataCut + 1)
