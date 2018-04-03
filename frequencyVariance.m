@@ -7,18 +7,21 @@ evenDivisible = floor(rows(data)/stepSize);
 %Finds the remainder and subtracts from total to find end value for whole divisions
 endValue = rows(data) - (rows(data) - (evenDivisible*stepSize));
 
+
+
 betaValues = ones(evenDivisible,3);
 sineSTDev = ones(rows(data),1);
-count = 0;
-for counter = 1:stepSize:endValue
+
+for counter = 0:stepSize:endValue
     if (counter+stepSize > endValue)
       break;
     endif
-    count = count+1;
-    designX = createSineComponents(data(counter:(counter+stepSize),1),inFreq);
-    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter:(counter+stepSize),2),designX);
-    sineSTDev(counter:(counter+stepSize),1) = sChkSigma.*ones(stepSize+1,1);
+    designX = createSineComponents(data(counter+1:(counter+stepSize),1),inFreq);
+    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),designX);
+    sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);
 endfor
+
+%Makes the end points equal to the last analyzed point.
 sineSTDev(endValue:rows(sineSTDev),1) = sineSTDev(endValue).*ones(rows(sineSTDev)-endValue+1,1);
 
 %Returns the completed array of variances
@@ -26,6 +29,19 @@ weightVal = sineSTDev;
 
 
 endfunction
+
+
+%!test
+%! b=[1,2,3,4,5,6,7,8,9,10];
+%! b=b';
+%! b=[b,rand(10,1)-(.5.*ones(10,1))];
+%! b(:,1) = 10000.*b(:,1);
+%![B,S,R,Err,Cov] = ols2(b(:,2),createSineComponents(b(:,1),pi));
+%! varRes = frequencyVariance(b,pi,rows(b)*pi);
+%! assert (varRes(1) == S);
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%OLD CODE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -55,6 +71,3 @@ for counter=1:stepSize:length(data(:,1))
     endif
     
 endfor
-
-
-
