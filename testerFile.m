@@ -34,7 +34,7 @@ kappa = (2*pi*f0)^2 * I;
   %This is the angle of seattleLat from the X vector
   seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
-
+  
 %Variables important to fitting
 %How many periods of the specific frequency are included in error fit
 chunkSize = 50;
@@ -45,11 +45,13 @@ startFreq = 1e-3;
 %End frequency scan
 stopFreq = 1e-2;
 %How many points are included in the coherent average bins
-dataDivisions = 15;
-dataCut = floor((rows(driftFix)-1)/dataDivisions);
+dataDivisions = 5;
+
+fullDataCut = floor((fullLength)/dataDivisions);
+dataCut = floor((rows(driftFix))/dataDivisions);
 
 %endCount is the #rows of frequency matrix
-endCount = floor((stopFreq-startFreq)/(jump*(1/dataCut)))
+endCount = floor((stopFreq-startFreq)/(jump*(1/fullDataCut)))
 %Creates array to collect values for mean/stdev
 valueStuff = zeros(endCount,6*dataDivisions);
 %Creates plotting array
@@ -61,18 +63,18 @@ ampError = zeros(endCount,7);
 
 %Assigns frequency values for the first column of the frequency and error arrays
 for i = 1:endCount
-  ampFreq(i,1) = (startFreq+((i-1)*jump*(1/dataCut)));
+  ampFreq(i,1) = (startFreq+((i-1)*jump*(1/fullDataCut)));
 endfor
 ampError(:,1) = ampFreq(:,1);
 
 i = 1;
 %Runs the fitter over each bin to find the amplitude at each frequency
-for j=1:(dataCut):(dataDivisions*dataCut)
+for j=0:(dataCut):((dataDivisions-1)*dataCut)
   j
   fflush(stdout);
   
   %Sums each bin into one array
-  [sAmp,sVar] = fakeDarkEPanalysis(driftFix(j:(j+dataCut),:),chunkSize,jump,startFreq,endCount);
+  sAmp = fakeDarkEPanalysis(driftFix(j+1:(j+dataCut),:),chunkSize,jump,startFreq,endCount,fullLength);
   valueStuff(:,6*i-5:6*i) = sAmp(:,2:7);
   i=i+1;
 endfor
@@ -91,27 +93,24 @@ ampError(:,2:7) = sqrt(ampError(:,2:7)./(dataDivisions-1));
 
 
 %Initializes the response function for each frequency of the amplitudes
-tau = ones(rows(ampFreq),1);
-for count = 1:rows(ampFreq)
-tau(count,1) = (1/kappa)/((1-(ampFreq(count,1)/f0)^2)+((i*ampFreq(count,1))/(Q*f0)));
-endfor
+tau = transferFunction(ampFreq(:,1),kappa,f0,Q);
 
 %Creates array for final data
 FINALAMP = ones(rows(ampFreq),5);
 FINALERR = ones(rows(ampError),5);
 for count = 1:rows(ampFreq)
 %Sums in quadrature the averaged sine/cosine amplitudes (inner product)
-FINALAMP(count,:) = [ampFreq(count,1),abs(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(count)),...
-abs(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/tau(count)),...
-abs(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/tau(count)),...
-abs(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/tau(count))];
+FINALAMP(count,:) = [ampFreq(count,1),abs(sqrt(ampFreq(count,[3,5])*ampFreq(count,[3,5])')/tau(ampFreq(count,1))),...
+abs(sqrt(ampFreq(count,[2,4])*ampFreq(count,[2,4])')/transferFunction(ampFreq(count,1),kappa,f0,Q)),...
+abs(sqrt(ampFreq(count,6:7)*ampFreq(count,6:7)')/transferFunction(ampFreq(count,1),kappa,f0,Q)),...
+abs(sqrt(ampFreq(count,2:7)*ampFreq(count,2:7)')/transferFunction(ampFreq(count,1),kappa,f0,Q))];
 
 FINALERR(count,2) = abs(sqrt(((ampFreq(count,3)^2)./(ampFreq(count,3)^2+ampFreq(count,5)^2))*ampError(count,3)^2 ...
-+((ampFreq(count,5)^2)./(ampFreq(count,3)^2+ampFreq(count,5)^2))*ampError(count,5)^2)/tau(count)); 
++((ampFreq(count,5)^2)./(ampFreq(count,3)^2+ampFreq(count,5)^2))*ampError(count,5)^2)/transferFunction(ampFreq(count,1),kappa,f0,Q)); 
 FINALERR(count,3) = abs(sqrt(((ampFreq(count,2)^2)./(ampFreq(count,2)^2+ampFreq(count,4)^2))*ampError(count,2)^2 ...
-+((ampFreq(count,4)^2)./(ampFreq(count,2)^2+ampFreq(count,4)^2))*ampError(count,4)^2)/tau(count));
++((ampFreq(count,4)^2)./(ampFreq(count,2)^2+ampFreq(count,4)^2))*ampError(count,4)^2)/transferFunction(ampFreq(count,1),kappa,f0,Q));
 FINALERR(count,4) = abs(sqrt(((ampFreq(count,6)^2)./(ampFreq(count,6)^2+ampFreq(count,7)^2))*ampError(count,6)^2 ...
-+((ampFreq(count,7)^2)./(ampFreq(count,6)^2+ampFreq(count,7)^2))*ampError(count,7)^2)/tau(count));
++((ampFreq(count,7)^2)./(ampFreq(count,6)^2+ampFreq(count,7)^2))*ampError(count,7)^2)/transferFunction(ampFreq(count,1),kappa,f0,Q));
 endfor
 
 FINALERR(:,1) = FINALAMP(:,1);
@@ -137,7 +136,7 @@ title('Torque vs frequency in the z component');
 
 figure(4);
 loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
-%legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
+legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency');

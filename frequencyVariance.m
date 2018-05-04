@@ -6,7 +6,12 @@ stepSize = ceil(chunkLength*(1/inFreq));
 evenDivisible = floor(rows(data)/stepSize);
 %Finds the remainder and subtracts from total to find end value for whole divisions
 endValue = rows(data) - (rows(data) - (evenDivisible*stepSize));
-
+if (endValue == 0)
+    designX = createSineComponents(data(:,1),inFreq);
+    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(:,2),designX);
+    weightVal = sChkSigma.*ones(rows(data),1);
+    return;
+endif
 
 
 betaValues = ones(evenDivisible,3);
@@ -25,20 +30,32 @@ endfor
 sineSTDev(endValue:rows(sineSTDev),1) = sineSTDev(endValue).*ones(rows(sineSTDev)-endValue+1,1);
 
 %Returns the completed array of variances
-weightVal = sineSTDev;
+weightVal = 1./(sineSTDev);
 
 
 endfunction
 
+%!test
+%! b=1:1000;
+%! b=b';
+%! b=[b,randn(1000,1)]; %Data array time 1-1000, random y values
+%! fitFreq = [1/1000, 1/100, 1/10];
+%! for num = 1:rows(fitFreq) %Checks multiple frequncies
+%! varRes = frequencyVariance(b,fitFreq(num),50);
+%! for count = 1:rows(varRes)
+%! assert(varRes(count) != 0) %Checks that the weight is never zero
+%! endfor
+%! endfor
 
 %!test
-%! b=[1,2,3,4,5,6,7,8,9,10];
+%! b=1:1000;
 %! b=b';
-%! b=[b,rand(10,1)-(.5.*ones(10,1))];
-%! b(:,1) = 10000.*b(:,1);
-%![B,S,R,Err,Cov] = ols2(b(:,2),createSineComponents(b(:,1),pi));
-%! varRes = frequencyVariance(b,pi,rows(b)*pi);
-%! assert (varRes(1) == S);
+%! b=[b,randn(1000,1)]; %Data array time 1-1000, random y values
+%! fitFreq = 1e-2;
+%! [B,olsSigma,R,Err,Cov] = ols2(b(:,2),createSineComponents(b(:,1),fitFreq)); %Finds chi square of fit
+%! varRes = frequencyVariance(b,fitFreq,rows(b)*fitFreq); %Chunk Length is equal to length of data
+%! fVSigma = varRes(1); %Takes first point, all points of fV should be the same
+%! assert (fVSigma == (1./olsSigma))
 
 
 
