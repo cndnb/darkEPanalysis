@@ -24,8 +24,3 @@ endfunction
 %! for count = 1:rows(inFreq)
 %!  assert(fVal(count) == rVal(count)) %Makes sure each column is the right number
 %! endfor
-
-%!test
-%! t = 1:1e5;t=t';
-%! tw = 5;
-%! O = torqueSim(t,I,kappa,Q,T,tw)

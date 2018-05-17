@@ -1,7 +1,10 @@
-t= 1:1e5; t=t';
+function darkEPTEST(tLength,nChunks)
+t= 1:tLength; t=t';
 
 
-tauT = [t,randn(length(t),1).*(1e-14)]; %Time domain torque (random noise)
+tauT = [t,randn(length(t),1)]; %Time domain torque (random noise)
+
+nChunks = 100;
 
 %Pendulum constants
 I = 378/1e7;                                                                    
@@ -10,24 +13,41 @@ kappa = ((2*pi*f0)^2)*I;
 Q = 1;                                                                     
 T = 0; %No temp noise
 
+chunkLength = floor(length(t)/nChunks);
+    
+preNumFreq = psd(tauT(1:1+chunkLength,:));
+numFreq = rows(preNumFreq(:,1));
+allTauW = ones(numFreq,1+nChunks);
+allThetaW = ones(numFreq,1+nChunks);
 
-preTheta = torqueSim(t,I,kappa,Q,T,tauT(:,2));
 
-thetaT = [preTheta(:,1),preTheta(:,2)]; %Pulls out displacement values from torqueSim
+for count = 0:nChunks-2
 
-tauW = psd(tauT(:,1),tauT(:,2)); %Frequency power spectrum of tau
-thetaW = psd(thetaT(:,1),thetaT(:,2)); %Frequency power specturm of theta
+  preTheta = torqueSim(t(1+count*chunkLength:1+(count+1)*chunkLength,1),I,kappa,Q,T,tauT(1+count*chunkLength:1+(count+1)*chunkLength,2));
 
-figure(1);
-plot(thetaT(:,1),thetaT(:,2),tauT(:,1),tauT(:,2),thetaT(:,1),preTheta(:,3)); %Time domain comparison
-legend('Theta(t)','tau(t)','w');
+  thetaT = [preTheta(:,1),preTheta(:,2)]; %Pulls out displacement values from torqueSim
 
-figure(2);
-loglog(tauW(:,1),tauW(:,2),thetaW(:,1),thetaW(:,2)); %Frequency domain comparison
- 
-figure(3);
-tfVal = abs(transferFunction(tauW(:,1),kappa,f0,Q).^2); %ratio of power spectra vs power of transfer function
-loglog(tauW(:,1),thetaW(:,2)./tauW(:,2),tauW(:,1),tfVal);
+  tauW = psd(tauT(1+count*chunkLength:1+(count+1)*chunkLength,1),tauT(1+count*chunkLength:1+(count+1)*chunkLength,2)); %Frequency power spectrum of tau
+  thetaW = psd(thetaT(:,1),thetaT(:,2)); %Frequency power specturm of theta
+  allTauW(:,1) = tauW(:,1);
+  allThetaW(:,1) = thetaW(:,1);
+  allTauW(:,1+count) = tauW(:,2);
+  allThetaW(:,1+count) = thetaW(:,2);
+endfor
 
-figure(4)
-semilogx(tauW(:,1),thetaW(:,2)./(tauW(:,2).*tfVal));
+avgTauW = [allTauW(:,1),mean(allTauW(:,2:1+nChunks)')'];
+avgThetaW = [allThetaW(:,1),mean(allThetaW(:,2:1+nChunks)')'];
+
+%figure(1);
+%loglog(avgTauW(:,1),avgTauW(:,2),avgThetaW(:,1),avgThetaW(:,2)); %Frequency domain comparison
+% 
+%figure(2);
+%tfVal = abs(transferFunction(avgTauW(:,1),kappa,f0,Q).^2); %ratio of power spectra vs power of transfer function
+%loglog(avgTauW(:,1),avgThetaW(:,2)./avgTauW(:,2),avgTauW(:,1),tfVal);
+%
+%figure(3);
+%semilogx(avgTauW(:,1),avgThetaW(:,2)./(avgTauW(:,2).*tfVal)-1);
+
+for num = 1:rows(avgTauW)-1000
+  assert (abs(avgThetaW(num,2)/(avgTauW(num,2).*tfVal(num))-1)<0.07) %0.07 is the value that this data doesn't pass
+endfor

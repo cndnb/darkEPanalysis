@@ -1,17 +1,21 @@
+'torqueSim'
+test torqueSim
+
 %Make some time
 t = 1:1e6;t=t';
-searchFreq = [1e-2,1e-3,1e-4,1e-5];
-f = 1e-3;
-A = 1e-18;
 
-finalSignal = A*sin(2*pi*searchFreq(1)*t)+A*sin(2*pi*searchFreq(2)*t)+...
-A*sin(2*pi*searchFreq(3)*t)+A*sin(2*pi*searchFreq(4)*t);
+
+A = 1e-15;
+omegaSearch = 2*pi*3e-3;
+omegaEarth = 2*pi*(1/86164.0916);
+
+finalSignal = zeros(rows(t),1);%A*(sin(omegaSearch*t));%+sin(omegaSearch*t).*cos(omegaEarth*t)+sin(omegaSearch*t).*sin(omegaEarth*t));
 
 
 %Parameters of the experiment
 I = 378/1e7;                                                                    
 f0 = 1.9338e-3;                                                                 
-kappa = (2*pi)^2*f0^2*I;                                                        
+kappa = ((2*pi*f0)^2)*I;                                                        
 Q = 500000;                                                                     
 T = 273+24; 
 
@@ -28,7 +32,10 @@ O = [T(:,1) T(:,2) + AutocollimatorNoise];
 accel = diff(diff(O(:,2)));
 Tor = I*accel + kappa*O(2:end-1,2);
 
+fullLength = rows(O);
+
 %Checks that peaks are at the correct points
+figure(1);
 check = psd(t(2:length(t)-1,1),Tor);
 loglog(check(:,1),check(:,2));
 

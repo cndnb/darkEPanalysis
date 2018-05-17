@@ -17,7 +17,7 @@ endfunction
 %!test
 %! t1=1:10000; 
 %! t1=t1'; 
-%! tAmp = 1e-10;
+%! tAmp = 1e-17;
 %! freq = [1/10, 1/100,1/1000];
 %! t2 = zeros(length(t1),1);
 %! for count = 1:length(freq)

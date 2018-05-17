@@ -1,34 +1,37 @@
-function [AMPOUT,AMPVAR] = fakeDarkEPanalysis(data,chunkSize, jump, startFreq, endCount)
-%%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
-%Where w is the undamped angular frequency, and Z = 1/2Q. Oscillation is underdamped,
-%therefore solution is of the form x = e^(-wZt)[A sin(Ct) + B cos(Ct)]
-%C = sqrt[w^2-(wZ)^2] = w*sqrt[1-Z^2]
-
-%torque = kappa*theta + rotI*(d^2 theta/dt^2)
-
-%Pendulum and balance parameters, in SI units:
-I = 378/(1e7);                                                                    
-f0 = 1.9338e-3;                                                                 
-Q = 500000;                                                                     
-T = 273+24;  
-kappa = (2*pi*f0)^2 * I;
-
-%Variables important to fitting
+%endCount = floor((stopFreq-startFreq)/(jump*(1/dataCut)))
+function AMPOUT = fakeDarkEPanalysis(data, chunkSize, jump, startFreq, endCount,dataLength)
 %Creates plotting array
-ampFreq = ones(endCount,7);
+ampFreq = ones(endCount,6);
 %Creates error array
-ampVar = ones(endCount,7);
+%ampVar = ones(endCount,7);
 for count = 1:endCount
-  count
-  fflush(stdout);
+
 [BETA,COV] = specFreqPower(data,...
-(startFreq+((count-1)*jump*(1/rows(data)))),chunkSize);
-ampFreq(count,:) = [(startFreq+((count-1)*jump*(1/rows(data)))),BETA];
-ampVar(count,:) = [(startFreq+((count-1)*jump*(1/rows(data)))),COV];
+(startFreq+((count-1)*jump*(1/dataLength))),chunkSize); %Finds BETA for each frequency
+ampFreq(count,:) = BETA;
+%ampVar(count,:) = [(startFreq+((count-1)*jump*(1/rows(data)))),COV];
 
 endfor
 AMPOUT = ampFreq;
-AMPVAR = ampVar;
+%AMPVAR = ampVar;
 endfunction
+
+%Error is not handled here, but in the standard deviation of the coherent
+%average. This is why ampVar is commented
+
+%!test
+%! searchAmp = 1e-18;
+%! count = 101;
+%! startFreq = 1e-3;
+%! stopFreq = 2e-2;
+%! t1=1:10000; t1=t1';
+%! sFreq = startFreq+((count-1)*(1/rows(t1)));
+%! t2 = searchAmp.*sin((2*pi*sFreq).*t1);
+%! fData = [t1,t2];
+%! fEndC = floor((stopFreq-startFreq)/(1/rows(fData)));
+%! testAmp = fakeDarkEPanalysis(fData,10,1,1e-3,fEndC);
+%! tSpecAmp = testAmp(count,6); %This is the pure sine component at the same frequency as the input
+%! assert (abs(tSpecAmp - searchAmp) < 2*eps)
+
+%testAmp has the form [freq, B values from createSineComponents], where the pure sine component
+%is the 5th term in createSineComponents => column 6 in testAmp.
