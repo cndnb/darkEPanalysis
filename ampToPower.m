@@ -3,11 +3,11 @@ function [FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)
   if(nargin != 5)
     usage('[FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)');
   endif
-  if(columns(ampFreq) != 7)
-    usage('ampFreq = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine]');
+  if(columns(ampFreq) < 7)
+    usage('ampFreq = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
   endif
-  if(columns(ampError) != 7)
-    usage('ampError = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine]');
+  if(columns(ampError) < 7)
+    usage('ampError = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
   endif
   
   ampMod = ones(rows(ampFreq),5); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum

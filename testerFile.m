@@ -6,7 +6,7 @@ test createSineComponents
 'frequencyVariance'
 test frequencyVariance
 'specFreqPower'
-test specFreqPower
+test specFreqAmp
 'weightedOLS'
 test weightedOLS
 'transferFunction'
@@ -55,11 +55,15 @@ seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-numBETAVal = 6;
+%1 for weightedOLS, 0 for ols2
+fitIsWeighted = 1;
+
+%Number of design matrix columns
+numBETAVal = 12;
 %How many periods of the specific frequency are included in error fit
 chunkSize = 50;
 %Multiples of smallest usable frequency between amplitude points
-jump = 1;
+jump = 1000;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
@@ -72,7 +76,20 @@ dataDivisions = 5;
 %Fits design matrix at each frequency over a given number of data bins
 %ampFreq is the average of each amplitude at each frequency over all bins
 %ampError is the standard deviation of each amplitude at each frequency over all bins
-[ampFreq,ampError] = dispAmpTF(driftFix,stopFreq,startFreq,jump,fullLength,dataDivisions,chunkSize,numBETAVal,0);
+
+%endCount is the #rows of frequency matrix
+%endCout = total frequency band divided by the smallest frequency jump
+%Integer so that it can be used for indexing
+endCount = floor((stopFreq-startFreq)/(jump*(1/fullLength)))+1;
+
+freqArray = ones(endCount,1);
+  
+%Assigns frequency values for the first column of the frequency and error arrays
+for count = 1:endCount
+  freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
+endfor
+  
+[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,dataDivisions,chunkSize,numBETAVal,0,fitIsWeighted);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,25 +104,25 @@ FINALERR = ones(rows(ampError),4);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plots torque power as a function of frequency
-figure(1);
+figure(5);
 loglogerr(FINALAMP(:,1),FINALAMP(:,2),FINALERR(:,2));
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency parallel to gamma');
 
-figure(2);
+figure(6);
 loglogerr(FINALAMP(:,1),FINALAMP(:,3),FINALERR(:,3));
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency perpendicular to gamma');
 
-figure(3);
+figure(7);
 loglogerr(FINALAMP(:,1),FINALAMP(:,4),FINALERR(:,4));
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency in the z component');
 
-figure(4);
+figure(8);
 loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
 legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
 xlabel('Frequency (Hz)');
