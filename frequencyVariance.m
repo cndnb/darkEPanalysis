@@ -5,8 +5,6 @@ if (nargin != 4)
   usage('weightVal = frequencyVariance(data,designX,inFreq,chunkLength)');
 endif
 
-%Design matrix for fits around resonance
-resonanceX = [designX(:,[1:6]),designX(:,[9:12])];
 %Resonant frequency of pendulum
 f0 = 1.9338e-3;                                                                 
 %Step size is chunk length periods of the frequency
@@ -14,16 +12,10 @@ stepSize = ceil(chunkLength*(1/inFreq));
 %Number of whole chunks that fit evenly into the data
 evenDivisible = floor(rows(data)/stepSize);
 %Finds the remainder and subtracts from total to find end value for whole divisions
-endValue = rows(data) - (rows(data) - (evenDivisible*stepSize));
-if (endValue <= 0)
-    try
-      [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(:,2),designX);
-      weightVal = sChkSigma.*ones(rows(data),1);
-    catch 
-      [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(:,2),resonanceX);
-      weightVal = sChkSigma.*ones(rows(data),1);
-    end_try_catch
-    return;
+endValue = (evenDivisible*stepSize);
+if (endValue == 0)
+  stepSize = rows(data);
+  endValue = rows(data);
 endif
 
 %Creates accumulation array for chi squared (weight) values
@@ -34,21 +26,24 @@ for counter = 0:stepSize:endValue
   if (counter+stepSize > endValue)
     break;
   endif
-  
-  %Makes sure that degenerate matrix at freq = f0 doesn't throw error
-  try
-    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),designX(counter+1:(counter+stepSize),:));
-    sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);
-   
-  catch
-    [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),resonanceX(counter+1:(counter+stepSize),:));
-    weightVal = sChkSigma.*ones(rows(data),1);
-  end_try_catch
+    %Makes sure that constant and linear terms are orthogonal
+    removeConstant = designX(counter+1:(counter+stepSize),:);
+    removeConstant(:,11) = removeConstant(:,11) .- (counter + 1);
+    try   %Fit to find Chi^2
+      [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),removeConstant);
+      sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);   
+    catch %If X'*X becomes degenerate near resonance, removes those fit parameters
+      onResonanceX = [removeConstant(:,1:6),removeConstant(:,9:12)];
+      [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),onResonanceX);
+      sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);
+    end_try_catch
   
 endfor
 
-%Makes the end points equal to the last analyzed point.
-sineSTDev(endValue:rows(sineSTDev),1) = sineSTDev(endValue).*ones(rows(sineSTDev)-endValue+1,1);
+if(endValue < rows(sineSTDev))
+  %Makes the end points equal to the last analyzed point.
+  sineSTDev(endValue:rows(sineSTDev),1) = sineSTDev(endValue).*ones(rows(sineSTDev)-endValue+1,1);
+endif
 
 %Returns the completed array of variances
 weightVal = 1./(sineSTDev);

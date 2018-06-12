@@ -31,9 +31,12 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunk
         else
         count
         fflush(stdout);
+        %Prevents linear and constant term from becoming degenerate
+        removeConstant = createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count));
+        removeConstant(:,11) = removeConstant(:,11) .- ((secCount*dataCut)+1);
         %Fits a data divison with the correct portion of the previously calculated design matrix
         [BETA,COV] = specFreqAmp(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,:),...
-        createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count)),frequencies(count),chunkSize);
+        removeConstant,frequencies(count),chunkSize);
         sAmp(count,:) = BETA;
         endif
       endfor
@@ -53,8 +56,12 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunk
         else
         count
         fflush(stdout);
+        %Prevents linear and constant term from becoming degenerate
+        removeConstant = createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count));
+        removeConstant(:,11) = removeConstant(:,11) .- ((secCount*dataCut)+1);
+        %Fits without weight the design matrix to the data
         [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
-        createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count,1)));
+        removeConstant);
         sAmp(count,:) = BETA;
         endif
       endfor

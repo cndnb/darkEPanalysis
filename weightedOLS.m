@@ -1,6 +1,6 @@
 function [retB,retC] = weightedOLS(X,Y,sigma)
    if (nargin != 3)
-    usage ("[BETA, COV] = weightedOLS (X,Y,sigma)");
+    usage ("[BETA, COV] = weightedOLS (X,Y,sigma); %Sigma is a column vector");
   endif
   
   [nr, nc] = size (X);

@@ -1,4 +1,4 @@
-function ret = createSineComponents(t,f)
+function ret = createSineComponents(timeData,f)
   %Simple statement of usage
   if (nargin != 2)
     usage ("X = createSineComponents(t,f)");
@@ -10,33 +10,33 @@ function ret = createSineComponents(t,f)
   
   %Creates 3-D array, 3rd dimension is the search frequency. Dim 1 and 2
   %is the design matrix for each frequency.
-  X = ones(length(t),12);
+  X = ones(length(timeData),8);
   
   %Perpendicular to X
-  X(:,1)= sin(omegaSearch.*t).*sin(omegaEarth.*t);
-  X(:,3)= cos(omegaSearch.*t).*sin(omegaEarth.*t);
+  X(:,1)= sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  X(:,3)= cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   
   %Parallel to X
-  X(:,2)= sin(omegaSearch.*t).*cos(omegaEarth.*t);
-  X(:,4)= cos(omegaSearch.*t).*cos(omegaEarth.*t);
+  X(:,2)= sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  X(:,4)= cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   
   %Z component
-  X(:,5)= sin(omegaSearch.*t);
-  X(:,6)= cos(omegaSearch.*t);
+  X(:,5)= sin(omegaSearch.*timeData);
+  X(:,6)= cos(omegaSearch.*timeData);
   
   %Resonant frequency component
-  X(:,7) = sin((2*pi*f0).*t);
-  X(:,8) = cos((2*pi*f0).*t);
+  X(:,7) = sin((2*pi*f0).*timeData);
+  X(:,8) = cos((2*pi*f0).*timeData);
   
   %Daily mondulation component
-  X(:,9) = sin(omegaEarth.*t);
-  X(:,10) = cos(omegaEarth.*t);
+  X(:,9) = sin(omegaEarth.*timeData);
+  X(:,10) = cos(omegaEarth.*timeData);
   
   %Drift component
-  X(:,11) = t;
+  X(:,11) = timeData;
   
   %Constant offset component
-  X(:,12) = ones(rows(t),1);
+  X(:,12) = ones(rows(timeData),1);
   
   ret = X;
 endfunction
@@ -50,3 +50,9 @@ endfunction
 %! b=b';
 %! X = createSineComponents(b,pi);
 %! assert (rank(X'*X) == columns(X))
+
+%!test
+%! b=1:10000;
+%! b=b';
+%! X = createSineComponents(b,pi);
+%! assert (b == X(:,11))
