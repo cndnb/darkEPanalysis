@@ -33,6 +33,8 @@ for counter = 0:stepSize:endValue
       [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),removeConstant);
       sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);   
     catch %If X'*X becomes degenerate near resonance, removes those fit parameters
+      inFreq
+      fflush(stdout);
       onResonanceX = [removeConstant(:,1:6),removeConstant(:,9:12)];
       [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),onResonanceX);
       sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);

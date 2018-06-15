@@ -17,6 +17,10 @@ test ampToPower
 fflush(stdout);
 pause()
 
+if (driftFix(1,1) != 1)
+  driftFix(:,1) = driftFix(:,1) .- driftFix(1,1) .+ 1;
+endif
+
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -63,7 +67,7 @@ numBETAVal = 12;
 %How many periods of the specific frequency are included in error fit
 chunkSize = 50;
 %Multiples of smallest usable frequency between amplitude points
-jump = 1000;
+jump = 1;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
@@ -91,7 +95,10 @@ endfor
   
 [ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,dataDivisions,chunkSize,numBETAVal,0,fitIsWeighted);
 
+ampFreq = [freqArray,ampFreq];
+ampError = [freqArray,ampError];
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %Creates array for final data
 FINALAMP = ones(rows(ampFreq),5);

@@ -57,11 +57,17 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunk
         count
         fflush(stdout);
         %Prevents linear and constant term from becoming degenerate
-        removeConstant = createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count));
+        removeConstant = createSineComponents(driftFix(((secCount*dataCut)+1:(secCount*dataCut)+dataCut),1),frequencies(count));
         removeConstant(:,11) = removeConstant(:,11) .- ((secCount*dataCut)+1);
         %Fits without weight the design matrix to the data
-        [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
-        removeConstant);
+        try
+          [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
+          removeConstant);
+        catch
+          noResonance = [removeConstant(:,1:6),removeConstant(:,9:12)];
+          [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
+          noResonance);
+        end_try_catch
         sAmp(count,:) = BETA;
         endif
       endfor
