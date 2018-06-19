@@ -1,7 +1,7 @@
-function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,test,weighted)
+function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
 
-  if (nargin != 8)
-    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,test,fitIsWeighted) (test = 0 for normal operation, 1 for testing)');
+  if (nargin != 9)
+    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
   endif
   
   dataCut = floor((rows(driftFix))/dataDivisions);
@@ -18,61 +18,52 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunk
   valueStuff = zeros(endCount,numBETAVal,dataDivisions);
   
   %Runs the fitter over each bin to find the amplitude at each frequency
-  if (weighted)
-    %Performs weighted OLS fit
+  if (weighted) %Performs weighted OLS fit
     for secCount = 0:(dataDivisions-1)
-      secCount
-  
-      sAmp = ones(endCount,numBETAVal);
-  
+      if (displayOut)
+        secCount
+      endif
       for count = 1:endCount
-        if (test)
-          sAmp(count,:) = ones(1,numBETAVal);
-        else
-        count
-        fflush(stdout);
-        %Prevents linear and constant term from becoming degenerate
-        removeConstant = createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count));
-        removeConstant(:,11) = removeConstant(:,11) .- ((secCount*dataCut)+1);
+        if (displayOut)
+          count
+          fflush(stdout);
+        endif
+        designX = createSineComponents(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),frequencies(count));
+        if (linearColumn != 0)
+          %Prevents linear and constant term from becoming degenerate
+          designX(:,linearColumn) = designX(:,linearColumn) .- ((secCount*dataCut)+1);
+        endif
         %Fits a data divison with the correct portion of the previously calculated design matrix
         [BETA,COV] = specFreqAmp(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,:),...
-        removeConstant,frequencies(count),chunkSize);
-        sAmp(count,:) = BETA;
-        endif
+        designX,frequencies(count),chunkSize,linearColumn);
+        valueStuff(count,:,secCount + 1) = BETA;
       endfor
-  
-      valueStuff(:,:,secCount + 1) = sAmp;
     endfor
-  else
-    %Performs unweighted OLS fit
+  else %Performs unweighted OLS fit
     for secCount = 0:(dataDivisions-1)
       secCount
   
       sAmp = ones(endCount,numBETAVal);
   
       for count = 1:endCount
-        if (test)
-          sAmp(count,:) = ones(1,numBETAVal);
-        else
         count
         fflush(stdout);
-        %Prevents linear and constant term from becoming degenerate
-        removeConstant = createSineComponents(driftFix(((secCount*dataCut)+1:(secCount*dataCut)+dataCut),1),frequencies(count));
-        removeConstant(:,11) = removeConstant(:,11) .- ((secCount*dataCut)+1);
+        designX = createSineComponents(driftFix(((secCount*dataCut)+1:(secCount*dataCut)+dataCut),1),frequencies(count));
+        if (linearColumn != 0)
+          %Prevents linear and constant term from becoming degenerate
+          designX(:,linearColumn) = designX(:,linearColumn) .- ((secCount*dataCut)+1);
+        endif
         %Fits without weight the design matrix to the data
         try
           [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
-          removeConstant);
+          designX);
         catch
-          noResonance = [removeConstant(:,1:6),removeConstant(:,9:12)];
+          noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
           [BETA,SIGMA,R,ERR,COV] = ols2(driftFix((secCount*dataCut)+1:(secCount*dataCut)+dataCut,2),...
           noResonance);
         end_try_catch
-        sAmp(count,:) = BETA;
-        endif
+        valueStuff(count,:,secCount + 1) = BETA;
       endfor
-  
-      valueStuff(:,:,secCount + 1) = sAmp;
     endfor
   endif
   
@@ -88,18 +79,66 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunk
   ERR = ampError;
 endfunction
 
-%!test
-%! t = 1:10000; t=t';
-%! tAmp = 1e-15;
-%! freq = pi;
-%! fakeData = [t, tAmp.*cos((2*pi*freq).*t)];
-%! fullDataCut = rows(fakeData);  
-%! startFreq = 1e-4;
-%! stopFreq = 1e-2; 
-%! jump = 1; chunkSize = 50; dataDivisions = 5; numBETAVal = 1;
-%! endCount = floor((stopFreq-startFreq)/(jump*(1/fullDataCut)))+1;
-%! frequencies = abs(randn);
-%! designX = createSineComponents(t,frequencies);
-%! [AMP,ERR] = dispAmpTF(fakeData,designX,endCount,dataDivisions,chunkSize, numBETAVal,1,1);
-%! assert(AMP == ones(endCount,1))
-%! assert(ERR == zeros(endCount,1))
+%!test %Checks that each column is equal to specAmpFreq at that frequency
+%! t= 1:10000; t=t';
+%! Amp = 1;
+%! freq = randn*(1/100);
+%! fData = [t,Amp.*sin((2*pi*freq).*t)];
+%! startFreq = 1e-3;
+%! stopFreq = 1e-2;
+%! chunkSize = 50;
+%! endCount = floor((stopFreq-startFreq)/(1/rows(t)))+1;
+%! dataDivisions = 1;
+%! numBETAVal = columns(createSineComponents(1,1));
+%! linearColumn = 0;
+%!
+%! freqArray = ones(endCount,1);
+%! for count = 1:endCount
+%!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
+%! endfor
+%!
+%! [ampFreq,ampErr] = dispAmpTF(fData,freqArray,endCount,dataDivisions,chunkSize,...
+%! numBETAVal,linearColumn,1,0); %isWeighted = 1; displayOutput = 0
+%!
+%! compareArray = ones(endCount,numBETAVal);
+%! for count = 1:endCount
+%!   [BETA,COV] = specFreqAmp(fData,createSineComponents(t,freqArray(count,1)),...
+%!   freqArray(count,1),chunkSize,linearColumn);
+%!   compareArray(count,:) = BETA;
+%! endfor
+%! assert(ampFreq,compareArray);
+
+%!test %Checks that mean works
+%! t= 1:20000; t=t';
+%! Amp = 1;
+%! freq = randn*(1/100);
+%! fData = [t,Amp.*sin((2*pi*freq).*t)];
+%! startFreq = 1e-3;
+%! stopFreq = 1e-2;
+%! chunkSize = 50;
+%! dataDivisions = 2;
+%! endCount = floor((stopFreq-startFreq)/(1/rows(t)))+1;
+%! numBETAVal = columns(createSineComponents(1,1));
+%! linearColumn = numBETAVal - 1;
+%!
+%! freqArray = ones(endCount,1);
+%! for count = 1:endCount
+%!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
+%! endfor
+%!
+%! [ampFreq,ampErr] = dispAmpTF(fData,freqArray,endCount,dataDivisions,chunkSize,...
+%! numBETAVal,linearColumn,1,0);%isWeighted = 1; displayOutput = 0
+%!
+%! compareArray = zeros(endCount,numBETAVal);
+%! dataCut = floor((rows(t))/dataDivisions);
+%! for secCount = 0:(dataDivisions-1)
+%!  for count = 1:endCount
+%!    removeConstant = createSineComponents(t((secCount*dataCut)+1:(secCount*dataCut)+dataCut,1),freqArray(count,1));
+%!    removeConstant(:,linearColumn) = removeConstant(:,linearColumn) .- ((secCount*dataCut)+1);
+%!    [BETA,COV] = specFreqAmp(fData((secCount*dataCut)+1:(secCount*dataCut)+dataCut,:),...
+%!    removeConstant,freqArray(count,1),chunkSize,linearColumn);
+%!    compareArray(count,:) = compareArray(count,:) + BETA;
+%!  endfor
+%! endfor
+%! compareArray = compareArray ./ dataDivisions;
+%! assert(ampFreq,compareArray);

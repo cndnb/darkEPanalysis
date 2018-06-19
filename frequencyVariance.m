@@ -1,8 +1,8 @@
 %This function creates a weight value depending on the chi squared spread of the data
-function weightVal = frequencyVariance(data,designX,inFreq,chunkLength)
+function weightVal = frequencyVariance(data,designX,inFreq,chunkLength,linearColumn)
 
-if (nargin != 4)
-  usage('weightVal = frequencyVariance(data,designX,inFreq,chunkLength)');
+if (nargin != 5)
+  usage('weightVal = frequencyVariance(data,designX,inFreq,chunkLength,linearColumn)');
 endif
 
 %Resonant frequency of pendulum
@@ -28,14 +28,16 @@ for counter = 0:stepSize:endValue
   endif
     %Makes sure that constant and linear terms are orthogonal
     removeConstant = designX(counter+1:(counter+stepSize),:);
-    removeConstant(:,11) = removeConstant(:,11) .- (counter + 1);
+    if (linearColumn != 0)
+      removeConstant(:,linearColumn) = removeConstant(:,linearColumn) .- (counter + 1);
+    endif
     try   %Fit to find Chi^2
       [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),removeConstant);
       sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);   
     catch %If X'*X becomes degenerate near resonance, removes those fit parameters
       inFreq
       fflush(stdout);
-      onResonanceX = [removeConstant(:,1:6),removeConstant(:,9:12)];
+      onResonanceX = [removeConstant(:,1:6),removeConstant(:,9:columns(designX))];
       [sChkBeta, sChkSigma, sChkR, sChkErr, sChkCov] = ols2(data(counter+1:(counter+stepSize),2),onResonanceX);
       sineSTDev(counter+1:(counter+stepSize),1) = sChkSigma.*ones(stepSize,1);
     end_try_catch
@@ -59,7 +61,7 @@ endfunction
 %! b=[b,randn(10000,1)]; %Data array time 1-10000, random y values
 %! fitFreq = [1/1000, 1/100, 1/10];
 %! for num = 1:rows(fitFreq) %Checks multiple frequncies
-%!  varRes = frequencyVariance(b,createSineComponents(b(:,1),fitFreq(num)),fitFreq(num),50);
+%!  varRes = frequencyVariance(b,createSineComponents(b(:,1),fitFreq(num)),fitFreq(num),50,0);
 %!  for count = 1:rows(varRes)
 %!    assert(varRes(count) != 0) %Checks that the weight is never zero
 %!  endfor
@@ -72,7 +74,7 @@ endfunction
 %! fitFreq = [1/1000, 1/100, 1/10];
 %! for num = 1:rows(fitFreq)
 %!  [B,olsSigma,R,Err,Cov] = ols2(b(:,2),createSineComponents(b(:,1),fitFreq(num))); %Finds chi square of fit
-%!  varRes = frequencyVariance(b,createSineComponents(b(:,1),fitFreq(num)),fitFreq(num),rows(b)*fitFreq(num)); %Chunk Length is equal to length of data
+%!  varRes = frequencyVariance(b,createSineComponents(b(:,1),fitFreq(num)),fitFreq(num),rows(b)*fitFreq(num),0); %Chunk Length is equal to length of data
 %!  fVSigma = varRes(1); %Takes first point, all points of fV should be the same
 %!  assert (fVSigma == (1./olsSigma))
 %! endfor

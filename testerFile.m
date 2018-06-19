@@ -1,4 +1,5 @@
 %%%%%%%%%%%%%%%%%%%% UNIT TESTS/PRELIMINARY CHECKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 'dispAmpTF'
 test dispAmpTF
 'createSineComponents'
@@ -16,6 +17,7 @@ test ampToPower
 
 fflush(stdout);
 pause()
+
 
 if (driftFix(1,1) != 1)
   driftFix(:,1) = driftFix(:,1) .- driftFix(1,1) .+ 1;
@@ -60,10 +62,13 @@ seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %1 for weightedOLS, 0 for ols2
-fitIsWeighted = 1;
+fitIsWeighted = 0;
 
 %Number of design matrix columns
-numBETAVal = 12;
+numBETAVal = columns(createSineComponents(1,1));;
+%Linear terms need constant subtracted off, need to know which column this will
+%be performed on--in this analysis, it is second to last.
+linearColumn = numBETAVal - 1;
 %How many periods of the specific frequency are included in error fit
 chunkSize = 50;
 %Multiples of smallest usable frequency between amplitude points
@@ -93,7 +98,7 @@ for count = 1:endCount
   freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
 endfor
   
-[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,dataDivisions,chunkSize,numBETAVal,0,fitIsWeighted);
+[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,fitIsWeighted,1);
 
 ampFreq = [freqArray,ampFreq];
 ampError = [freqArray,ampError];

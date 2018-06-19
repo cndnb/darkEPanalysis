@@ -29,21 +29,21 @@ function ret = createSineComponents(timeData,f)
   X(:,8) = cos((2*pi*f0).*timeData);
   
   %Daily mondulation component
-  X(:,9) = sin(omegaEarth.*timeData);
-  X(:,10) = cos(omegaEarth.*timeData);
+  %X(:,9) = sin(omegaEarth.*timeData);
+  %X(:,10) = cos(omegaEarth.*timeData);
   
   %Drift component
-  X(:,11) = timeData;
+  X(:,9) = timeData;
   
   %Constant offset component
-  X(:,12) = ones(rows(timeData),1);
+  X(:,10) = ones(rows(timeData),1);
   
   ret = X;
 endfunction
 
 %!test
 %! G = createSineComponents(0,1);
-%! assert(G  == [ 0,0,0,1,0,1,0,1,0,1,0,1] );
+%! assert(G  == [ 0,0,0,1,0,1,0,1,0,1] );
 
 %!test
 %! b=1:10000;
@@ -55,4 +55,4 @@ endfunction
 %! b=1:10000;
 %! b=b';
 %! X = createSineComponents(b,pi);
-%! assert (b == X(:,11))
+%! assert (b == X(:,(columns(X)-1)))
