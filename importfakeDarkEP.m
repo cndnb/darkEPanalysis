@@ -1,60 +1,82 @@
+'importing data'
+fflush(stdout);
+
+clear driftFix;
+clear fullLength;
+
+if (!exist('testing'))
+  testing = 0;
+endif
+
+%imports data
 d = load('fakeDarkEPAugust92017.dat');
-
-I = 378/(1e7);                                                                    
-f0 = 1.9338e-3;                                                                 
-Q = 500000;                                                                     
-T = 273+24;  
-kappa = (2*pi*f0)^2 * I;
-
-
-%%%%%%%%%%%%%%%%%%%%%%%% DRIFT CORRECTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%Removes drift from the data
-%linearDesign = [ones(length(d(:,1)),1),d(:,1)];
-%[lDB, lDS, lDR, LDEr, lDCov] = ols2(d(:,2),linearDesign);
-%oldDriftFix = [d(:,1),d(:,2)-(linearDesign*lDB)];
-%
-%%Removes the daily swing from the data
-%[dailyBeta, dailySigma, dailyR] = sineFitter(oldDriftFix(:,1),oldDriftFix(:,2),1/86400);
-%oldDriftFix = [oldDriftFix(:,1),oldDriftFix(:,2)-genSineSeed(oldDriftFix(:,1),1/86400)*dailyBeta];
-
 
 %%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%Calculates the torque at each point, puts into an array for analysis
 calcTorque = torque(d, I, kappa);
 
 %This is the value above which torque is considered an earthquake
 threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
+%Number of seconds around a large torque that will be removed
 areaRemove = 10000;
+%Number of days in the data considered
+daysInclude = 3;
 
-[driftFix,editTorque] = removeEarthquakes(d,calcTorque,threshold,areaRemove);
-check = psd(editTorque(:,1),editTorque(:,2)-mean(editTorque(:,2)));
+%returns torques set to zero at earthquakes in a matrix, 
+%driftFix = data divided into days and earthquake points removed
+%driftFix{day,1} = [seconds, displacement amplitude]
+%Full length is length of the data in seconds from start to stop, before
+%earthquake removal
+[driftFix,editTorque,fullLength] = removeEarthquakes(d,calcTorque,threshold,areaRemove,daysInclude);
 
 
-numRows = 0;
-for count = 1:rows(driftFix)
-  numRows = rows(driftFix{count,1});
-endfor
 
-fullData = zeros(numRows,2);
-indexNum = 1
-for count = 1:rows(driftFix)
-  fullData(indexNum:(indexNum+rows(driftFix{count,1})-1),:) = driftFix{count,1};
-  indexNum = indexNum + rows(driftFix{count,1});
-endfor
 
-fullLength = rows(fullData);
 
-figure(1);
-plot(d(:,1),d(:,2));
-figure(2);
-plot(fullData(:,1),fullData(:,2));
 
-%Checking that FFT of torque has no peaks
-figure(5);
-loglog(check(:,1),check(:,2));
+if (testing)
+  %Makes plotting more simple
+  numRows = 0;
+  for count = 1:rows(driftFix)
+    numRows = rows(driftFix{count,1});
+  endfor
 
-%Checking the threshold level
-figure(6);
-plot(calcTorque(3:(1e6 - 2),1),calcTorque(3:(1e6 - 2),2),calcTorque(3:(1e6 - 2),1),...
-threshold.*ones(length(calcTorque)-4,1));
+  fullData = zeros(numRows,2);
+  indexNum = 1
+  for count = 1:rows(driftFix)
+    fullData(indexNum:(indexNum+rows(driftFix{count,1})-1),:) = driftFix{count,1};
+    indexNum = indexNum + rows(driftFix{count,1});
+  endfor
+  
+  figure(1);
+  plot(d(:,1),d(:,2));
+  title('Original Data');
+  xlabel('Time (s)');
+  ylabel('Displacement (rad)');
+  
+  figure(2);
+  plot(fullData(:,1),fullData(:,2));
+  title('Earthquakes Removed');
+  xlabel('Time (s)');
+  ylabel('Displacement (rad)');
+  
+  %Checking that FFT of torque has no peaks
+  check = psd(editTorque(:,1),editTorque(:,2)-mean(editTorque(:,2)));
+  figure(5);
+  loglog(check(:,1),check(:,2));
+  title('Torque FFT without earthquakes');
+  xlabel('Time (s)');
+  ylabel('Torque (N m)');
+  
+  %Checking the threshold level
+  figure(6);
+  plot(calcTorque(3:(1e6 - 2),1),calcTorque(3:(1e6 - 2),2),calcTorque(3:(1e6 - 2),1),...
+  threshold.*ones(length(calcTorque)-4,1));
+  title('Threshold plotted on torque');
+  xlabel('Time (s)');
+  ylabel('Torque (N m)');
+endif
+
+'done'
+fflush(stdout);

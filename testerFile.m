@@ -1,22 +1,25 @@
 %%%%%%%%%%%%%%%%%%%% UNIT TESTS/PRELIMINARY CHECKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+testing = 0;
 
-'dispAmpTF'
-test dispAmpTF
-'createSineComponents'
-test createSineComponents
-'frequencyVariance'
-test frequencyVariance
-'specFreqPower'
-test specFreqAmp
-'weightedOLS'
-test weightedOLS
-'transferFunction'
-test transferFunction
-'ampToPower'
-test ampToPower
+if (testing)
+  'dispAmpTF'
+  test dispAmpTF
+  'createSineComponents'
+  test createSineComponents
+  'frequencyVariance'
+  test frequencyVariance
+  'specFreqAmp'
+  test specFreqAmp
+  'weightedOLS'
+  test weightedOLS
+  'transferFunction'
+  test transferFunction
+  'ampToPower'
+  test ampToPower
 
-fflush(stdout);
-pause()
+  fflush(stdout);
+  pause()
+endif
 
 
 
@@ -31,31 +34,40 @@ pause()
 %torque = kappa*theta + rotI*(d^2 theta/dt^2)
 
 %Pendulum and balance parameters, in SI units:
-I = 378/(1e7);                                                                    
-f0 = 1.9338e-3;                                                                 
-Q = 500000;                                                                     
-T = 273+24;  
-kappa = (2*pi*f0)^2 * I;
+global I = 378/(1e7);                                                                    
+global f0 = 1.9338e-3;                                                                 
+global Q = 500000;                                                                     
+global Temp = 273+24;  
+global kappa = (2*pi*f0)^2 * I;
 
-%Latitude, longitude, and compass direction to be input as decimal degrees
-global seattleLat = 47.6593743;
-global seattleLong = -122.30262920000001;
-global compassDir = 90;
-global dipoleMag = 1;
+%%Latitude, longitude, and compass direction to be input as decimal degrees
+%global seattleLat = 47.6593743;
+%global seattleLong = -122.30262920000001;
+%global compassDir = 90;
+%global dipoleMag = 1;
+%
+%%Sidereal day frequency
+%global omegaEarth = 2*pi*(1/86164.0916);
+%
+%%Defining the X vector at January 1st 2000 00:00 UTC
+%%Using the website https://www.timeanddate.com/worldclock/sunearth.html
+%%At the time Mar 20 2000 07:35 UT
+%%80*24*3600 + 7*3600 + 35*60 = 6939300 seconds since January 1, 2000 00:00:00 UTC
+%%At the vernal equinox, longitude is equal to zero, so z=0;
+%global vernalEqLat = 68.1166667;
+%
+%%Prepares seattleLat in terms of equatorial cordinates at January 1, 2000 00:00:00 UTC
+%%This is the angle of seattleLat from the X vector
+%seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
-%Sidereal day frequency
-global omegaEarth = 2*pi*(1/86164.0916);
+%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+daysInclude = 3;
+if (!exist('driftFix'))
+  importfakeDarkEP
+  'done'
+  fflush(stdout);
+endif
 
-%Defining the X vector at January 1st 2000 00:00 UTC
-%Using the website https://www.timeanddate.com/worldclock/sunearth.html
-%At the time Mar 20 2000 07:35 UT
-%80*24*3600 + 7*3600 + 35*60 = 6939300 seconds since January 1, 2000 00:00:00 UTC
-%At the vernal equinox, longitude is equal to zero, so z=0;
-global vernalEqLat = 68.1166667;
-
-%Prepares seattleLat in terms of equatorial cordinates at January 1, 2000 00:00:00 UTC
-%This is the angle of seattleLat from the X vector
-seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,7 +100,8 @@ chunkSize = 50;
 %endCount is the #rows of frequency matrix
 %endCout = total frequency band divided by the smallest frequency jump
 %Integer so that it can be used for indexing
-endCount = floor((stopFreq-startFreq)/(jump*(1/fullLength)))+1;
+endCount = floor((stopFreq-startFreq)/(jump*(1/fullLength)))+1
+fflush(stdout);
 
 freqArray = ones(endCount,1);
   

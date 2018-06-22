@@ -1,9 +1,20 @@
-function [theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove)
+function [theta,tau,fullLength] = removeEarthquakes(data,torque,threshold,areaRemove,daysInclude)
 %This method works as long as areaRemove is less than one day.
-
+if (!exist('testing'))
+  testing = 0;
+endif
 
 dayLength = 86400; %seconds
-numDays = floor(rows(data)/dayLength);
+maxDays = floor(rows(data)/dayLength);
+if (daysInclude == 0) %Fits the maximum number of days in the data
+  numDays = maxDays;
+elseif (daysInclude > maxDays)
+  numDays = maxDays;
+else
+  numDays = daysInclude;
+endif
+
+%Initialize accumulation array
 dataDivisions = cell(numDays,1);
 
 for count = 0:numDays-1
@@ -22,9 +33,11 @@ for count = 1:numDays
   while (indS > aMatrix(1,1))
     if (abs(torque(indS,2))>(threshold)) %If torque at time exceeds threshold    
       %Removes all points within areaRemove of the earthquake point
-      count
-      indS
-      fflush(stdout);
+      if (testing)
+        count
+        indS
+        fflush(stdout);
+      endif
       %Displacement points removal
       back = ((indS-aMatrix(1,1))-areaRemove);
       forward = ((indS-aMatrix(1,1))+areaRemove);
@@ -75,5 +88,6 @@ endfor
 %Returns edited arrays
 theta = dataDivisions;
 tau = noEarthTorque;
+fullLength = numDays*dayLength;
 
 endfunction
