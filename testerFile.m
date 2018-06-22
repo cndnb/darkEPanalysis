@@ -19,9 +19,7 @@ fflush(stdout);
 pause()
 
 
-if (driftFix(1,1) != 1)
-  driftFix(:,1) = driftFix(:,1) .- driftFix(1,1) .+ 1;
-endif
+
 
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,24 +59,25 @@ seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%1 for weightedOLS, 0 for ols2
-fitIsWeighted = 0;
-
 %Number of design matrix columns
 numBETAVal = columns(createSineComponents(1,1));;
 %Linear terms need constant subtracted off, need to know which column this will
 %be performed on--in this analysis, it is second to last.
 linearColumn = numBETAVal - 1;
-%How many periods of the specific frequency are included in error fit
-chunkSize = 50;
+
 %Multiples of smallest usable frequency between amplitude points
 jump = 1;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
 stopFreq = 1e-2;
-%How many points are included in the coherent average bins
-dataDivisions = 5;
+
+%If weighted
+%1 for weightedOLS, 0 for ols2
+fitIsWeighted = 0;
+
+%How many periods of the specific frequency are included in weighted error fit
+chunkSize = 50;
 
 %%%%%%%%%%%% TIME => FREQUENCY DEPENDENT DISPLACEMENT AMPLITUDE %%%%%%%%%%%%%%%%
 

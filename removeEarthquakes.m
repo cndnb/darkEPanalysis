@@ -18,10 +18,13 @@ noEarthTorque = torque;
 for count = 1:numDays
   aMatrix = dataDivisions{count,1};
   indS = aMatrix(rows(aMatrix),1);
-  while (indS>aMatrix(1,1)-1)
-    if (abs(torque(indS,2))>(threshold)) %If torque at time exceeds threshold
+  noVal = 0;
+  while (indS > aMatrix(1,1))
+    if (abs(torque(indS,2))>(threshold)) %If torque at time exceeds threshold    
       %Removes all points within areaRemove of the earthquake point
-      
+      count
+      indS
+      fflush(stdout);
       %Displacement points removal
       back = ((indS-aMatrix(1,1))-areaRemove);
       forward = ((indS-aMatrix(1,1))+areaRemove);
@@ -47,7 +50,7 @@ for count = 1:numDays
       endif
       aMatrix(back:forward,:) = [];
       dataDivisions{count,1} = aMatrix;
-      
+     
       %Removal on torque array
       back = indS - areaRemove;
       forward = indS + areaRemove;
@@ -61,6 +64,11 @@ for count = 1:numDays
       indS = back;
     endif
     indS = indS - 1;
+    try
+      aMatrix(1,1);
+    catch
+      break;
+    end_try_catch
   endwhile
 endfor
 
