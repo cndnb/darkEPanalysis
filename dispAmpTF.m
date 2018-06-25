@@ -1,6 +1,6 @@
-function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
+function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
 
-  if (nargin != 9)
+  if (nargin != 8)
     usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
   endif
 
@@ -103,7 +103,7 @@ endfunction
 %!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
 %! endfor
 %!
-%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,dataDivisions,chunkSize,...
+%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,chunkSize,...
 %! numBETAVal,linearColumn,1,0); %isWeighted = 1; displayOutput = 0
 %!
 %! compareArray = ones(endCount,numBETAVal);
@@ -134,7 +134,7 @@ endfunction
 %!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
 %! endfor
 %!
-%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,dataDivisions,chunkSize,...
+%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,chunkSize,...
 %! numBETAVal,linearColumn,1,0);%isWeighted = 1; displayOutput = 0
 %!
 %! compareArray = zeros(endCount,numBETAVal);
