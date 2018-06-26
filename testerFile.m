@@ -76,7 +76,7 @@ threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
 %Number of days in the data considered
-daysInclude = 3;
+daysInclude = 5;
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
@@ -187,25 +187,34 @@ FINALERR = ones(rows(ampError),4);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plots torque power as a function of frequency
-figure(5);
-loglogerr(FINALAMP(:,1),FINALAMP(:,2),FINALERR(:,2));
+figure(1);
+loglog(FINALAMP(:,1),FINALAMP(:,2));
+hold on;
+loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
+hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency parallel to gamma');
 
-figure(6);
-loglogerr(FINALAMP(:,1),FINALAMP(:,3),FINALERR(:,3));
+figure(2);
+loglog(FINALAMP(:,1),FINALAMP(:,3));
+hold on;
+loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
+hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency perpendicular to gamma');
 
-figure(7);
-loglogerr(FINALAMP(:,1),FINALAMP(:,4),FINALERR(:,4));
+figure(3);
+loglog(FINALAMP(:,1),FINALAMP(:,4));
+hold on;
+loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
+hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency in the z component');
 
-figure(8);
+figure(4);
 loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
 legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
 xlabel('Frequency (Hz)');
