@@ -1,15 +1,18 @@
-'torqueSim'
-test torqueSim
+%'torqueSim'
+%test torqueSim
 
 %Make some time
 t = 1:1e6;t=t';
 
 
 A = 1e-15;
-omegaSearch = 2*pi*3e-3;
+omegaSearch = 2*pi*5e-3;
 omegaEarth = 2*pi*(1/86164.0916);
 
-finalSignal = zeros(rows(t),1);%A*(sin(omegaSearch*t));%+sin(omegaSearch*t).*cos(omegaEarth*t)+sin(omegaSearch*t).*sin(omegaEarth*t));
+finalSignal = A.*sin(omegaSearch.*t).*sin(omegaEarth.*t);
+
+
+%A*(sin(omegaSearch*t));%+sin(omegaSearch*t).*cos(omegaEarth*t)+sin(omegaSearch*t).*sin(omegaEarth*t));
 
 
 %Parameters of the experiment
@@ -17,10 +20,10 @@ I = 378/1e7;
 f0 = 1.9338e-3;                                                                 
 kappa = ((2*pi*f0)^2)*I;                                                        
 Q = 500000;                                                                     
-T = 273+24; 
+Temp = 273+24; 
 
 %Simulate a pendulum
-T= torqueSim(t,I, kappa,Q, T, finalSignal);
+T= torqueSim(t,I, kappa,Q, Temp, finalSignal);
 
 %Fake some autocollimator noise
 AutocollimatorNoise = randn(size(t)) * 0.5e-9;
@@ -38,4 +41,6 @@ fullLength = rows(O);
 figure(1);
 check = psd(t(2:length(t)-1,1),Tor);
 loglog(check(:,1),check(:,2));
+
+d = O;
 

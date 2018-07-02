@@ -1,33 +1,93 @@
-function [theta,tau,pointsRemove] = removeEarthquakes(data,torque,threshold,areaRemove)
+function [theta,tau,fullLength] = removeEarthquakes(data,torque,threshold,areaRemove,daysInclude)
+%This method works as long as areaRemove is less than one day.
+if (!exist('testing'))
+  testing = 0;
+endif
 
-%Sets up for removal of high torque points.
-noTorqueDisplace = data;
+dayLength = 86400; %seconds
+maxDays = floor(rows(data)/dayLength);
+if (daysInclude == 0) %Fits the maximum number of days in the data
+  numDays = maxDays;
+elseif (daysInclude > maxDays)
+  numDays = maxDays;
+else
+  numDays = daysInclude;
+endif
+
+%Initialize accumulation array
+dataDivisions = cell(numDays,1);
+
+for count = 0:numDays-1
+  dataDivisions(count+1,1) = data((count*dayLength+1):((count+1)*dayLength),:);
+endfor
+
+%Prepares torque array to have points removed.
 noEarthTorque = torque;
-count = 0;
+
 %Goes through each point to check if torque is above threshold, sets points
 %over threshold to zero
-i=rows(torque);
-while (i>0)
-  if (abs(torque(i,2))>(threshold))
-    %Removes all points within areaRemove of the earthquake point
-    back = (i-areaRemove);
-    forward = (i+areaRemove);
-    if ((i-areaRemove)<0)
-      back = 1;
+for count = 1:numDays
+  aMatrix = dataDivisions{count,1};
+  indS = aMatrix(rows(aMatrix),1);
+  noVal = 0;
+  while (indS > aMatrix(1,1))
+    if (abs(torque(indS,2))>(threshold)) %If torque at time exceeds threshold    
+      %Removes all points within areaRemove of the earthquake point
+      if (testing)
+        count
+        indS
+        fflush(stdout);
+      endif
+      %Displacement points removal
+      back = ((indS-aMatrix(1,1))-areaRemove);
+      forward = ((indS-aMatrix(1,1))+areaRemove);
+      if (back < 1) %If removal area leaks into previous day
+        try %Attempt to remove points from previous day
+          subMatrix = dataDivisions{count - 1,1}; %Accesses next day
+          subMatrix(rows(subMatrix)+back:rows(subMatrix),:) = []; %Back would be negative, so index = rows(subMatrix)+back
+          dataDivisions{count - 1,1} = subMatrix;
+          back = 1;
+        catch %Otherwise matrix is the first day, do nothing.
+          back = 1;
+        end_try_catch
+      endif
+      if (forward > (rows(aMatrix))) %If removal area leaks into next day
+        try
+          subMatrix = dataDivisions{count + 1,1};
+          subMatrix(1:(forward - rows(aMatrix)),:) = [];
+          dataDivisions{count + 1,1} = subMatrix;
+          forward = rows(aMatrix);
+        catch
+          forward = rows(aMatrix);
+        end_try_catch
+      endif
+      aMatrix(back:forward,:) = [];
+      dataDivisions{count,1} = aMatrix;
+     
+      %Removal on torque array
+      back = indS - areaRemove;
+      forward = indS + areaRemove;
+      if (back < 1)
+        back = 1;
+      endif
+      if (forward > rows(noEarthTorque))
+        forward = rows(noEarthTorque);
+      endif 
+      noEarthTorque(back:forward,2) = 0;
+      indS = back;
     endif
-    if ((i+areaRemove)>length(noTorqueDisplace))
-      forward = length(noTorqueDisplace);
-    endif
-    noTorqueDisplace(back:forward,:) = [];
-    noEarthTorque(back:forward,2) = 0;
-    i = back;
-  endif
-  i = i - 1;
-endwhile
+    indS = indS - 1;
+    try
+      aMatrix(1,1);
+    catch
+      break;
+    end_try_catch
+  endwhile
+endfor
 
-
-%Returns edited array
-pointsRemove = count;
-theta = noTorqueDisplace;
+%Returns edited arrays
+theta = dataDivisions;
 tau = noEarthTorque;
+fullLength = numDays*dayLength;
+
 endfunction
