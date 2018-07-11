@@ -4,7 +4,7 @@ if (!exist('testing'))
   testing = 0;
 endif
 
-dayLength = 86400; %seconds
+dayLength = 86400/4; %Half days %seconds
 maxDays = floor(rows(data)/dayLength);
 if (daysInclude == 0) %Fits the maximum number of days in the data
   numDays = maxDays;

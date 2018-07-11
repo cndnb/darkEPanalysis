@@ -61,8 +61,9 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
           noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
           [BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),...
           noResonance);
+		BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
         end_try_catch
-        valueStuff(count,:,secCount) = BETA;
+	valueStuff(count,:,secCount) = BETA;
       endfor
     endfor
   endif

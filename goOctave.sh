@@ -1,6 +1,4 @@
-#!/bin/bash
-
-octave --no-init-file \
+octave-cli --no-init-file \
 	-p ./mlib/ \
 	--persist \
 	--eval "pkg load geometry" \

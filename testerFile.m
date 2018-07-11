@@ -61,7 +61,6 @@ global kappa = (2*pi*f0)^2 * I;
 %seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-daysInclude = 3;
 if (!exist('d'))
   importfakeDarkEP
 endif
@@ -76,7 +75,7 @@ threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
 %Number of days in the data considered
-daysInclude = 5;
+daysInclude = 20;
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
