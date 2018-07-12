@@ -1,7 +1,7 @@
 function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
 
   if (nargin != 8)
-    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,dataDivisions,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
+    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
   endif
 
   
@@ -14,13 +14,13 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
 
   %Creates array to collect chunk values for mean/stdev
   valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
-  
   %Runs the fitter over each bin to find the amplitude at each frequency
   if (weighted) %Performs weighted OLS fit
     for secCount = 1:rows(driftFix)
       if (displayOut)
         secCount
       endif
+      weightVal = resonanceVariance(driftFix{secCount,1},chunkSize);
       for count = 1:endCount
         if (displayOut)
           count
@@ -33,7 +33,7 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
         endif
         %Fits a data divison with the correct portion of the previously calculated design matrix
         [BETA,COV] = specFreqAmp(driftFix{secCount,1},...
-        designX,frequencies(count),chunkSize,linearColumn);
+        designX,weightVal);
         valueStuff(count,:,secCount) = BETA;
       endfor
     endfor
@@ -108,9 +108,9 @@ endfunction
 %! numBETAVal,linearColumn,1,0); %isWeighted = 1; displayOutput = 0
 %!
 %! compareArray = ones(endCount,numBETAVal);
+%! weightVal = resonanceVariance(fData,chunkSize);
 %! for count = 1:endCount
-%!   [BETA,COV] = specFreqAmp(fData,createSineComponents(t,freqArray(count,1)),...
-%!   freqArray(count,1),chunkSize,linearColumn);
+%!   [BETA,COV] = specFreqAmp(fData,createSineComponents(t,freqArray(count,1)),weightVal);
 %!   compareArray(count,:) = BETA;
 %! endfor
 %! assert(ampFreq,compareArray);
@@ -140,11 +140,12 @@ endfunction
 %!
 %! compareArray = zeros(endCount,numBETAVal);
 %! for secCount = 1:rows(dataDivisions)
+%!  weightVal = resonanceVariance(dataDivisions{secCount,1},chunkSize);
 %!  for count = 1:endCount
 %!    removeConstant = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count,1));
 %!    removeConstant(:,linearColumn) = removeConstant(:,linearColumn) .- (dataDivisions{secCount,1}(1,1));
 %!    [BETA,COV] = specFreqAmp(dataDivisions{secCount,1},...
-%!    removeConstant,freqArray(count,1),chunkSize,linearColumn);
+%!    removeConstant,weightVal);
 %!    compareArray(count,:) = compareArray(count,:) + BETA;
 %!  endfor
 %! endfor
