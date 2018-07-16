@@ -63,6 +63,8 @@ global kappa = (2*pi*f0)^2 * I;
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (!exist('d'))
   importfakeDarkEP
+  weightVal = resonanceVariance(d,10);
+  d = [d,weightVal];
 endif
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -75,14 +77,14 @@ threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
 %Number of days in the data considered
-daysInclude = 5;
+daysInclude = 0;
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque,fullLength] = removeEarthquakes(d,calcTorque,threshold,areaRemove,daysInclude);
+[driftFix,editTorque,fullLength] = removeEarthquakes(newD,calcTorque,threshold,areaRemove,daysInclude);
 
 if (testing)
   %Makes plotting more simple
@@ -147,9 +149,9 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %How many periods of the specific frequency are included in weighted error fit
-chunkSize = 50;
+chunkSize = 10;
 
-%%%%%%%%%%%% TIME => FREQUENCY DEPENDENT DISPLACEMENT AMPLITUDE %%%%%%%%%%%%%%%%
+%%%%%%%%%%%% AMPLITUDE(TIME) => AMPLITUDE(FREQUENCY) CONVERSION  %%%%%%%%%%%%%%%%
 
 %Fits design matrix at each frequency over a given number of data bins
 %ampFreq is the average of each amplitude at each frequency over all bins

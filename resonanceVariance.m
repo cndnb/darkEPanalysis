@@ -1,4 +1,4 @@
-function [ret,removeDrift] = resonanceVariance(data, chunkLength)
+function ret = resonanceVariance(data, chunkLength)
   %Resonant frequency of pendulum
   f0 = 1.9338e-3;
   fEarth = 1/86400;                                                               
@@ -32,7 +32,6 @@ function [ret,removeDrift] = resonanceVariance(data, chunkLength)
   if (endValue < rows(data))
     weightVal(endValue:end) = weightVal(stepSize*evenDivisible-1,1)*ones((rows(data)-endValue) + 1,1);
   endif
-  
   %Weights are equal to 1/chisquared
   ret = weightVal;
 endfunction
@@ -60,7 +59,7 @@ endfunction
 %! 
 %! designX = [sin((2*pi*f0).*b(:,1)), cos((2*pi*f0).*b(:,1))];
 %! [B,olsSigma,Err,Cov] = ols2(removeDrift(:,2),designX); %Finds chi square of fit
-%! [varRes,cB] = resonanceVariance(b,rows(b)*f0); %Chunk Length is equal to length of data
+%! varRes = resonanceVariance(b,rows(b)*f0); %Chunk Length is equal to length of data
 %! fVSigma = varRes(1); %Takes first point, all points of fV should be the same
 %! assert (fVSigma,olsSigma)
 

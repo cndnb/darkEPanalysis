@@ -20,7 +20,7 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
       if (displayOut)
         secCount
       endif
-      weightVal = resonanceVariance(driftFix{secCount,1},chunkSize);
+      %weightVal = resonanceVariance(driftFix{secCount,1},chunkSize);
       for count = 1:endCount
         if (displayOut)
           count
@@ -32,8 +32,8 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
         %Fits a data divison with the correct portion of the previously calculated design matrix
-        [BETA,COV] = specFreqAmp(driftFix{secCount,1},...
-        designX,weightVal);
+        [BETA,COV] = specFreqAmp(driftFix{secCount,1}(:,1:2),...
+        designX,driftFix{secCount,1}(:,3));
         valueStuff(count,:,secCount) = BETA;
       endfor
     endfor
@@ -89,10 +89,12 @@ endfunction
 %! t= 1:10000; t=t';
 %! Amp = 1;
 %! freq = randn*(1/100);
+%! chunkSize = 50;
 %! fData = [t,Amp.*sin((2*pi*freq).*t)];
+%! weightVal = resonanceVariance(fData,chunkSize);
+%! fData = [fData,weightVal];
 %! startFreq = 1e-3;
 %! stopFreq = 1e-2;
-%! chunkSize = 50;
 %! endCount = floor((stopFreq-startFreq)/(1/rows(t)))+1;
 %! dataDivisions = cell(1,1);
 %! dataDivisions{1,1} = fData;
@@ -108,9 +110,8 @@ endfunction
 %! numBETAVal,linearColumn,1,0); %isWeighted = 1; displayOutput = 0
 %!
 %! compareArray = ones(endCount,numBETAVal);
-%! weightVal = resonanceVariance(fData,chunkSize);
 %! for count = 1:endCount
-%!   [BETA,COV] = specFreqAmp(fData,createSineComponents(t,freqArray(count,1)),weightVal);
+%!   [BETA,COV] = specFreqAmp(fData(:,1:2),createSineComponents(t,freqArray(count,1)),fData(:,3));
 %!   compareArray(count,:) = BETA;
 %! endfor
 %! assert(ampFreq,compareArray);
@@ -119,10 +120,12 @@ endfunction
 %! t= 1:20000; t=t';
 %! Amp = 1;
 %! freq = randn*(1/100);
+%! chunkSize = 50;
 %! fData = [t,Amp.*sin((2*pi*freq).*t)];
+%! weightVal = resonanceVariance(fData,chunkSize);
+%! fData = [fData,weightVal];
 %! startFreq = 1e-3;
 %! stopFreq = 1e-2;
-%! chunkSize = 50;
 %! dataDivisions = cell(2,1);
 %! dataDivisions{1,1} = fData(1:10000,:);
 %! dataDivisions{2,1} = fData(10001:20000,:);
@@ -140,12 +143,11 @@ endfunction
 %!
 %! compareArray = zeros(endCount,numBETAVal);
 %! for secCount = 1:rows(dataDivisions)
-%!  weightVal = resonanceVariance(dataDivisions{secCount,1},chunkSize);
 %!  for count = 1:endCount
 %!    removeConstant = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count,1));
 %!    removeConstant(:,linearColumn) = removeConstant(:,linearColumn) .- (dataDivisions{secCount,1}(1,1));
-%!    [BETA,COV] = specFreqAmp(dataDivisions{secCount,1},...
-%!    removeConstant,weightVal);
+%!    [BETA,COV] = specFreqAmp(dataDivisions{secCount,1}(:,1:2),...
+%!    removeConstant,dataDivisions{secCount,1}(:,3));
 %!    compareArray(count,:) = compareArray(count,:) + BETA;
 %!  endfor
 %! endfor
