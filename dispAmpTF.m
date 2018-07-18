@@ -77,7 +77,7 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
     ampError = std(valueStuff,0,3); %0 makes std use denominator N-1
   else
     ampFreq = valueStuff;
-    ampError = [];
+    ampError = zeros(rows(valueStuff),columns(valueStuff));
   endif
   
   %Returns

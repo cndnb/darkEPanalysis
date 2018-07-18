@@ -84,7 +84,7 @@ daysInclude = 0;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque,fullLength] = removeEarthquakes(newD,calcTorque,threshold,areaRemove,daysInclude);
+[driftFix,editTorque,fullLength] = removeEarthquakes(nnewD,calcTorque,threshold,areaRemove,daysInclude);
 
 if (testing)
   %Makes plotting more simple
@@ -135,7 +135,7 @@ endif
 numBETAVal = columns(createSineComponents(1,1));;
 %Linear terms need constant subtracted off, need to know which column this will
 %be performed on--in this analysis, it is second to last.
-linearColumn = numBETAVal - 1;
+linearColumn = 0;%numBETAVal - 1;
 
 %Multiples of smallest usable frequency between amplitude points
 jump = 1;
@@ -178,8 +178,8 @@ ampError = [freqArray,ampError];
 
 
 %Creates array for final data
-FINALAMP = ones(rows(ampFreq),5);
-FINALERR = ones(rows(ampError),4);
+FINALAMP = ones(rows(ampFreq),3);%,5);
+FINALERR = ones(rows(ampError),3);%,4);
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
@@ -195,29 +195,29 @@ loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2
 hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
-title('Torque vs frequency parallel to gamma');
+%title('Torque vs frequency parallel to gamma');
 
-figure(2);
-loglog(FINALAMP(:,1),FINALAMP(:,3));
-hold on;
-loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
-hold off;
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency perpendicular to gamma');
+%figure(2);
+%loglog(FINALAMP(:,1),FINALAMP(:,3));
+%hold on;
+%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
+%hold off;
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N m)');
+%title('Torque vs frequency perpendicular to gamma');
 
-figure(3);
-loglog(FINALAMP(:,1),FINALAMP(:,4));
-hold on;
-loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
-hold off;
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency in the z component');
+%figure(3);
+%loglog(FINALAMP(:,1),FINALAMP(:,4));
+%hold on;
+%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
+%hold off;
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N m)');
+%title('Torque vs frequency in the z component');
 
-figure(4);
-loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
-legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency');
+%figure(4);
+%loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
+%legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N m)');
+%title('Torque vs frequency');

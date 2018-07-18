@@ -5,7 +5,7 @@ if (!exist('testing'))
 endif
 
 dayLength = 86400; %seconds
-maxDays = floor(data(end,1)/dayLength);
+maxDays = ceil(data(end,1)/dayLength);
 if (daysInclude == 0) %Fits the maximum number of days in the data
   numDays = maxDays;
 elseif (daysInclude > maxDays)
@@ -17,16 +17,24 @@ endif
 %Initialize accumulation array
 dataDivisions = cell(numDays,1);
 
+endVal = data(end,1);
 dayCount = 1;
 secCount = 1;
 while (dayCount <= numDays)
-	if(data(secCount,1) <= dayLength*dayCount)
-		dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
-		secCount = secCount + 1;
-	else
+	try
+		if(data(secCount,1) <= dayLength*dayCount)
+			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
+			secCount = secCount + 1;
+		else
+			dayCount = dayCount + 1;
+		endif
+	catch
 		dayCount = dayCount + 1;
-	endif
+	end_try_catch
 endwhile
+
+lengthCheck = cell2mat(dataDivisions(:,1));
+fullLength = rows(lengthCheck);
 
 %Prepares torque array to have points removed.
 noEarthTorque = torque;
@@ -96,6 +104,5 @@ endwhile
 %Returns edited arrays
 theta = dataDivisions;
 tau = noEarthTorque;
-fullLength = numDays*dayLength;
 
 endfunction
