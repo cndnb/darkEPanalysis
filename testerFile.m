@@ -61,11 +61,24 @@ global kappa = (2*pi*f0)^2 * I;
 %seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%How many periods of the specific frequency are included in weighted error fit
+chunkSize = 10;
+
+pkg load signal;
+
 if (!exist('d'))
   importfakeDarkEP
-  weightVal = resonanceVariance(d,10);
+  f = fir1(10000,0.01,'high');
+  F = filter(f,1,d(:,2));
+  weightVal = abs(F - mean(F)) + 1e-9;
+  %weightVal = resonanceVariance(d,chunkSize);
   d = [d,weightVal];
 endif
+omegaEarth = 2*pi*(1/86164.0916);
+t = (1:rows(newD))';
+X = [ones(rows(t),1)];%,t,sin(omegaEarth.*t),cos(omegaEarth.*t)];
+[DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
+preDF = [newD(:,1),newD(:,2) - X*DFB];%,d(:,3)];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,7 +97,7 @@ daysInclude = 0;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque,fullLength] = removeEarthquakes(nnewD,calcTorque,threshold,areaRemove,daysInclude);
+[driftFix,editTorque,fullLength] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
 
 if (testing)
   %Makes plotting more simple
@@ -132,7 +145,7 @@ endif
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Number of design matrix columns
-numBETAVal = columns(createSineComponents(1,1));;
+numBETAVal = columns(createSineComponents(1,1));
 %Linear terms need constant subtracted off, need to know which column this will
 %be performed on--in this analysis, it is second to last.
 linearColumn = 0;%numBETAVal - 1;
@@ -148,8 +161,6 @@ stopFreq = 1e-2;
 %1 for weightedOLS, 0 for ols2
 fitIsWeighted = 0;
 
-%How many periods of the specific frequency are included in weighted error fit
-chunkSize = 10;
 
 %%%%%%%%%%%% AMPLITUDE(TIME) => AMPLITUDE(FREQUENCY) CONVERSION  %%%%%%%%%%%%%%%%
 
@@ -170,29 +181,27 @@ for count = 1:endCount
   freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
 endfor
   
-[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,chunkSize,numBETAVal,linearColumn,fitIsWeighted,1);
+[ampFreq,ampError,phase] = dispAmpTF(driftFix,freqArray,endCount,chunkSize,numBETAVal,linearColumn,fitIsWeighted,1);
 
-ampFreq = [freqArray,ampFreq];
-ampError = [freqArray,ampError];
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %Creates array for final data
-FINALAMP = ones(rows(ampFreq),3);%,5);
-FINALERR = ones(rows(ampError),3);%,4);
+FINALAMP = ones(rows(freqArray),3);%,5);
+FINALERR = ones(rows(freqArray),3);%,4);
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR] = ampToPower(ampFreq,ampError,kappa,f0,Q);
+[FINALAMP, FINALERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plots torque power as a function of frequency
 figure(1);
 loglog(FINALAMP(:,1),FINALAMP(:,2));
-hold on;
-loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
-hold off;
+%hold on;
+%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
+%hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 %title('Torque vs frequency parallel to gamma');

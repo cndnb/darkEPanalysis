@@ -1,7 +1,7 @@
-function [FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)
+function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
   
-  if(nargin != 5)
-    usage('[FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)');
+  if(nargin != 6)
+    usage('[FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)');
   endif
   %if(columns(ampFreq) < 7)
   %  usage('ampFreq = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
@@ -10,9 +10,9 @@ function [FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)
   %  usage('ampError = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
   %endif
   
-  ampMod = ones(rows(ampFreq),2); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
-  ampMod(:,1) = ampFreq(:,1); %Gets frequencies
-  ampMod(:,2) = sqrt(ampFreq(:,2).^2 + ampFreq(:,3).^2);
+  ampMod = ones(rows(freqArray),2); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
+  ampMod(:,1) = freqArray; %Gets frequencies
+  ampMod(:,2) = sqrt(ampFreq(:,1).^2 + ampFreq(:,2).^2);
   %ampMod(:,2) = sqrt(ampFreq(:,3).^2 + ampFreq(:,5).^2);%ParGamma
   %ampMod(:,3) = sqrt(ampFreq(:,2).^2 + ampFreq(:,4).^2);%PerpGamma
   %ampMod(:,4) = sqrt(ampFreq(:,6).^2 + ampFreq(:,7).^2); %Z
@@ -25,7 +25,7 @@ function [FAMP,FERR] = ampToPower(ampFreq,ampError,kappa,f0,Q)
   FAMP = ampMod;
   %Divides by transfer function to get power(frequency)
   
-  errMod = ones(rows(ampError),4);
+  errMod = ones(rows(freqArray),4);
   %errMod(:,1) = ampError(:,1);
   %errMod(:,2) = sqrt((1 ./(ampFreq(:,3).^2 .+ ampFreq(:,5).^2)).*((ampFreq(:,3).*ampError(:,3)).^2 + (ampFreq(:,5).*ampError(:,5)).^2));
   %errMod(:,3) = sqrt((1 ./(ampFreq(:,2).^2 .+ ampFreq(:,4).^2)).*((ampFreq(:,2).*ampError(:,2)).^2 + (ampFreq(:,4).*ampError(:,4)).^2));

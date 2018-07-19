@@ -4,6 +4,7 @@ function ret = createSineComponents(timeData,f)
     usage ("X = createSineComponents(t,f)");
   endif
   
+
   f0 = 1.9338e-3;
   omegaSearch = 2*pi.*f;
   omegaEarth = 2*pi*(1/86164.0916);

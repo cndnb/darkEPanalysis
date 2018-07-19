@@ -1,4 +1,4 @@
-function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
+function [AMP,ERR,phase] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
 
   if (nargin != 8)
     usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
@@ -68,6 +68,11 @@ function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVa
     endfor
   endif
   
+  phase = ones(rows(frequencies),rows(driftFix));
+  for count = 1:rows(driftFix)
+	phase(:,count) = atan(valueStuff(:,1,count)./valueStuff(:,2,count));
+  endfor
+
   if (rows(driftFix) > 1) %This is only used in testing
     %Sums values over each bin and then averages for the mean
     ampFreq = mean(valueStuff,3);

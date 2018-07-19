@@ -25,7 +25,7 @@ while (dayCount <= numDays)
 		if(data(secCount,1) <= dayLength*dayCount)
 			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
 			secCount = secCount + 1;
-		else
+		else 
 			dayCount = dayCount + 1;
 		endif
 	catch
