@@ -1,11 +1,11 @@
-function [theta,tau,fullLength] = removeEarthquakes(data,torque,threshold,areaRemove,daysInclude)
+function [theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove,daysInclude)
 %This method works as long as areaRemove is less than one day.
 if (!exist('testing'))
   testing = 0;
 endif
 
 dayLength = 86400; %seconds
-maxDays = ceil(data(end,1)/dayLength);
+maxDays = ceil(data(rows(data),1)/dayLength);
 if (daysInclude == 0) %Fits the maximum number of days in the data
   numDays = maxDays;
 elseif (daysInclude > maxDays)
@@ -15,12 +15,12 @@ else
 endif
 
 %Initialize accumulation array
-dataDivisions = cell(numDays,1);
+dataDivisions = cell(maxDays,1);
 
 endVal = data(end,1);
 dayCount = 1;
 secCount = 1;
-while (dayCount <= numDays)
+while (dayCount <= maxDays)
 	try
 		if(data(secCount,1) <= dayLength*dayCount)
 			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
@@ -33,15 +33,13 @@ while (dayCount <= numDays)
 	end_try_catch
 endwhile
 
-lengthCheck = cell2mat(dataDivisions(:,1));
-fullLength = rows(lengthCheck);
 
 %Prepares torque array to have points removed.
 noEarthTorque = torque;
 
 %Goes through each point to check if torque is above threshold, sets points
 %over threshold to zero
-count = numDays;
+count = maxDays;
 while(count > 0)
 	aMatrix = dataDivisions{count,1};
 	if(rows(aMatrix) == 0)
@@ -101,8 +99,12 @@ while(count > 0)
 	count = count - 1;
 endwhile
 
+if(numDays > rows(dataDivisions))
+  numDays = rows(dataDivisions);
+endif
+
 %Returns edited arrays
-theta = dataDivisions;
+theta = dataDivisions(1:numDays,:);
 tau = noEarthTorque;
 
 endfunction

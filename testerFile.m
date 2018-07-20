@@ -21,9 +21,6 @@ if (testing)
   pause()
 endif
 
-
-
-
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -60,6 +57,28 @@ global kappa = (2*pi*f0)^2 * I;
 %%This is the angle of seattleLat from the X vector
 %seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Number of design matrix columns
+numBETAVal = columns(createSineComponents(1,1));
+%Linear terms need constant subtracted off, need to know which column this will
+%be performed on--in this analysis, it is second to last.
+linearColumn = 0;%numBETAVal - 1;
+
+%Multiples of smallest usable frequency between amplitude points
+jump = 1;
+%Start of frequency scan
+startFreq = 1e-3;
+%End frequency scan
+stopFreq = 1e-2;
+
+%If weighted
+%1 for weightedOLS, 0 for ols2
+fitIsWeighted = 0;
+
+%Number of days in the data considered
+daysInclude = 1;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
@@ -68,11 +87,12 @@ pkg load signal;
 
 if (!exist('d'))
   importfakeDarkEP
-  f = fir1(10000,0.01,'high');
-  F = filter(f,1,d(:,2));
-  weightVal = abs(F - mean(F)) + 1e-9;
-  %weightVal = resonanceVariance(d,chunkSize);
-  d = [d,weightVal];
+  %f = fir1(10000,0.01,'high');
+  %F = filter(f,1,d(:,2));
+  %weightVal = abs(F - mean(F)) + 1e-9;
+  weightVal = resonanceVariance(d,chunkSize);
+  d(:,3) = weightVal;
+  newD = d(370000:410000,:);
 endif
 omegaEarth = 2*pi*(1/86164.0916);
 t = (1:rows(newD))';
@@ -89,15 +109,16 @@ calcTorque = torque(d, I, kappa);
 threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
-%Number of days in the data considered
-daysInclude = 0;
+
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque,fullLength] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+[driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+
+fullLength = rows(cell2mat(driftFix(:,1)));
 
 if (testing)
   %Makes plotting more simple
@@ -141,26 +162,6 @@ if (testing)
   xlabel('Time (s)');
   ylabel('Torque (N m)');
 endif
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%Number of design matrix columns
-numBETAVal = columns(createSineComponents(1,1));
-%Linear terms need constant subtracted off, need to know which column this will
-%be performed on--in this analysis, it is second to last.
-linearColumn = 0;%numBETAVal - 1;
-
-%Multiples of smallest usable frequency between amplitude points
-jump = 1;
-%Start of frequency scan
-startFreq = 1e-3;
-%End frequency scan
-stopFreq = 1e-2;
-
-%If weighted
-%1 for weightedOLS, 0 for ols2
-fitIsWeighted = 0;
-
 
 %%%%%%%%%%%% AMPLITUDE(TIME) => AMPLITUDE(FREQUENCY) CONVERSION  %%%%%%%%%%%%%%%%
 
