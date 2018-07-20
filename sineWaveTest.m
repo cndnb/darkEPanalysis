@@ -20,13 +20,14 @@ count = 1;
 
 BETAARR = ones(rows(ampFreq),1);
 BETAOLSARR = ones(rows(ampFreq),1);
-for freq = 5e-4:(1/rows(data)):5e-3
+for freq = 1e-3:(1/rows(data)):1e-2
   freq
   fflush(stdout);
-[BETA,COV] = specFreqPower(data,freq,50);
+[BETA,COV] = specFreqAmp(data,createSineComponents(data(:,1),freq),sW);
 [BETAOLS,COVOLS] = ols2(data(:,2),createSineComponents(data(:,1),freq));
-ampFreq(count,:) = [freq,sqrt(BETA(5)^2+BETA(6)^2)];
-ampFreqOLS(count,:) = [freq,sqrt(BETAOLS(5)^2+BETAOLS(6)^2)];
+BETAOLS = BETAOLS';
+ampFreq(count,:) = [freq,sqrt(BETA(1)^2+BETA(2)^2)];
+ampFreqOLS(count,:) = [freq,sqrt(BETAOLS(1)^2+BETAOLS(2)^2)];
 ampFreq(count,2) = abs(ampFreq(count,2)/transferFunction(freq,kappa,f0,Q));
 ampFreqOLS(count,2) = abs(ampFreqOLS(count,2)/transferFunction(freq,kappa,f0,Q));
 count = count+1;

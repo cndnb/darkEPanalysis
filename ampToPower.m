@@ -1,6 +1,7 @@
-function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
+%function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
+function [FAMP,FERR] = ampToPower(valueStuff,freqArray,kappa,f0,Q)
   
-  if(nargin != 6)
+  if(nargin != 5)
     usage('[FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)');
   endif
   %if(columns(ampFreq) < 7)
@@ -12,7 +13,15 @@ function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
   
   ampMod = ones(rows(freqArray),2); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
   ampMod(:,1) = freqArray; %Gets frequencies
-  ampMod(:,2) = sqrt(ampFreq(:,1).^2 + ampFreq(:,2).^2);
+  
+  valDim = size(valueStuff);
+  preAvg = ones(rows(freqArray),valDim(3));
+  for count = 1:valDim(3)
+    preAvg = sqrt(valueStuff(:,1,count).^2 + valueStuff(:,2,count).^2);
+  endfor
+  
+  ampMod(:,2) = sum(preAvg,2)./columns(preAvg);
+  %ampMod(:,2) = sqrt(ampFreq(:,1).^2 + ampFreq(:,2).^2);
   %ampMod(:,2) = sqrt(ampFreq(:,3).^2 + ampFreq(:,5).^2);%ParGamma
   %ampMod(:,3) = sqrt(ampFreq(:,2).^2 + ampFreq(:,4).^2);%PerpGamma
   %ampMod(:,4) = sqrt(ampFreq(:,6).^2 + ampFreq(:,7).^2); %Z

@@ -1,9 +1,9 @@
 function ret = transferFunction(inFreq,kappa,f0,Q)
-  if (columns(inFreq)!= 1)
-    error("transferFunction can only take a frequency column vector");
-  endif
   if (nargin != 4)
     usage("tau(frequency) = transferFunction(frequency,kappa,resonanceFreq,Q)");
+  endif
+  if (columns(inFreq)!= 1)
+    error("transferFunction can only take a frequency column vector");
   endif
   
   ret = (1/kappa)./((1 .- (inFreq./f0).^2).+((sqrt(-1).*inFreq)./(Q*f0)));

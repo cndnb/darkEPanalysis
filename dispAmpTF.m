@@ -1,9 +1,11 @@
-function [AMP,ERR,phase] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,weighted,displayOut)
+%function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
+function rtn = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
 
-  if (nargin != 8)
-    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,numBETAVal,linearColumn,fitIsWeighted,displayOut)');
+  if (nargin != 6)
+    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,fitIsWeighted,displayOut)');
   endif
 
+  numBETAVal = columns(createSineComponents(1,1));
   
   %Accumulation arrays
   %Amplitude at each frequency
@@ -31,9 +33,9 @@ function [AMP,ERR,phase] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,num
           %Prevents linear and constant term from becoming degenerate
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
+        data = driftFix{secCount,1};
         %Fits a data divison with the correct portion of the previously calculated design matrix
-        [BETA,COV] = specFreqAmp(driftFix{secCount,1}(:,1:2),...
-        designX,driftFix{secCount,1}(:,3));
+        [BETA,COV] = specFreqAmp(data(:,1:2),designX,data(:,3));
         valueStuff(count,:,secCount) = BETA;
       endfor
     endfor
@@ -67,11 +69,6 @@ function [AMP,ERR,phase] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,num
       endfor
     endfor
   endif
-  
-  phase = ones(rows(frequencies),rows(driftFix));
-  for count = 1:rows(driftFix)
-	phase(:,count) = atan(valueStuff(:,1,count)./valueStuff(:,2,count));
-  endfor
 
   if (rows(driftFix) > 1) %This is only used in testing
     %Sums values over each bin and then averages for the mean
@@ -86,8 +83,9 @@ function [AMP,ERR,phase] = dispAmpTF(driftFix,frequencies,endCount,chunkSize,num
   endif
   
   %Returns
-  AMP = ampFreq;
-  ERR = ampError;
+  rtn = valueStuff;
+  %AMP = ampFreq;
+  %ERR = ampError;
 endfunction
 
 %!test %Checks that each column is equal to specAmpFreq at that frequency
@@ -103,7 +101,6 @@ endfunction
 %! endCount = floor((stopFreq-startFreq)/(1/rows(t)))+1;
 %! dataDivisions = cell(1,1);
 %! dataDivisions{1,1} = fData;
-%! numBETAVal = columns(createSineComponents(1,1));
 %! linearColumn = 0;
 %!
 %! freqArray = ones(endCount,1);
@@ -111,10 +108,10 @@ endfunction
 %!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
 %! endfor
 %!
-%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,chunkSize,...
-%! numBETAVal,linearColumn,1,0); %isWeighted = 1; displayOutput = 0
+%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,...
+%! linearColumn,1,0); %isWeighted = 1; displayOutput = 0
 %!
-%! compareArray = ones(endCount,numBETAVal);
+%! compareArray = ones(endCount,columns(createSineComponents(1,1)));
 %! for count = 1:endCount
 %!   [BETA,COV] = specFreqAmp(fData(:,1:2),createSineComponents(t,freqArray(count,1)),fData(:,3));
 %!   compareArray(count,:) = BETA;
@@ -135,18 +132,17 @@ endfunction
 %! dataDivisions{1,1} = fData(1:10000,:);
 %! dataDivisions{2,1} = fData(10001:20000,:);
 %! endCount = floor((stopFreq-startFreq)/(1/rows(t)))+1;
-%! numBETAVal = columns(createSineComponents(1,1));
-%! linearColumn = numBETAVal - 1;
+%! linearColumn = columns(createSineComponents(1,1)) - 1;
 %!
 %! freqArray = ones(endCount,1);
 %! for count = 1:endCount
 %!   freqArray(count,1) = (startFreq+((count-1)*(1/rows(t))));
 %! endfor
 %!
-%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,chunkSize,...
-%! numBETAVal,linearColumn,1,0);%isWeighted = 1; displayOutput = 0
+%! [ampFreq,ampErr] = dispAmpTF(dataDivisions,freqArray,endCount,...
+%! linearColumn,1,0);%isWeighted = 1; displayOutput = 0
 %!
-%! compareArray = zeros(endCount,numBETAVal);
+%! compareArray = zeros(endCount,columns(createSineComponents(1,1)));
 %! for secCount = 1:rows(dataDivisions)
 %!  for count = 1:endCount
 %!    removeConstant = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count,1));
