@@ -1,4 +1,4 @@
-function ret = createSineComponents(timeData,f)
+function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   %Simple statement of usage
   if (nargin != 2)
     usage ("X = createSineComponents(t,f)");
@@ -11,19 +11,21 @@ function ret = createSineComponents(timeData,f)
   
   %Creates 3-D array, 3rd dimension is the search frequency. Dim 1 and 2
   %is the design matrix for each frequency.
-  X = ones(length(timeData),2);
+  dZ = ones(length(timeData),2);
+  dPeX = ones(length(timeData),2);
+  dPaX = ones(length(timeData),2);
   
   %Perpendicular to X
-  %X(:,1)= sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
-  %X(:,3)= cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  dPeX(:,1)= sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  dPeX(:,2)= cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   
   %Parallel to X
-  %X(:,2)= sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
-  %X(:,4)= cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  dPaX(:,1)= sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  dPaX(:,2)= cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   
   %Z component
-  X(:,1)= sin(omegaSearch.*timeData);
-  X(:,2)= cos(omegaSearch.*timeData);
+  dZ(:,1)= sin(omegaSearch.*timeData);
+  dZ(:,2)= cos(omegaSearch.*timeData);
   
   %Resonant frequency component
   %X(:,7) = sin((2*pi*f0).*timeData);
@@ -38,8 +40,7 @@ function ret = createSineComponents(timeData,f)
   
   %Constant offset component
   %X(:,3) = ones(rows(timeData),1);
-  
-  ret = X;
+
 endfunction
 
 %!test

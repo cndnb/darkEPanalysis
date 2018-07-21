@@ -77,7 +77,7 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %Number of days in the data considered
-daysInclude = 0;
+daysInclude = 3;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %How many periods of the specific frequency are included in weighted error fit
@@ -92,13 +92,13 @@ if (!exist('d'))
   %weightVal = abs(F - mean(F)) + 1e-9;
   weightVal = resonanceVariance(d,chunkSize);
   d(:,3) = weightVal;
-  newD = d(370000:410000,:);
+  newD = [d(195000:235000,:);d(370000:410000,:)];
 endif
 omegaEarth = 2*pi*(1/86164.0916);
 t = (1:rows(newD))';
 X = [ones(rows(t),1)];%,t,sin(omegaEarth.*t),cos(omegaEarth.*t)];
 [DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
-preDF = [newD(:,1),newD(:,2) - X*DFB,newD(:,3)];
+preDF = [newD(:,1),newD(:,2) - X*DFB];%,newD(:,3)];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -118,7 +118,7 @@ areaRemove = 10000;
 %earthquake removal
 [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
 
-fullLength = 40000;%rows(cell2mat(driftFix(:,1)));
+fullLength = rows(driftFix{1,1});
 
 if (testing)
   %Makes plotting more simple
@@ -183,7 +183,7 @@ for count = 1:endCount
 endfor
   
 %[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
-preAvg = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
+[preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -194,7 +194,7 @@ FINALERR = ones(rows(freqArray),3);%,4);
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR] = ampToPower(preAvg,freqArray,kappa,f0,Q);
+[FINALAMP, FINALERR] = ampToPower(preAvgZ,preAvgPerpX,preAvgParaX,freqArray,kappa,f0,Q);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -206,25 +206,25 @@ loglog(FINALAMP(:,1),FINALAMP(:,2));
 %hold off;
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
-%title('Torque vs frequency parallel to gamma');
+title('Torque vs frequency parallel to Z');
 
-%figure(2);
-%loglog(FINALAMP(:,1),FINALAMP(:,3));
+figure(2);
+loglog(FINALAMP(:,1),FINALAMP(:,3));
 %hold on;
 %loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
 %hold off;
-%xlabel('Frequency (Hz)');
-%ylabel('Torque (N m)');
-%title('Torque vs frequency perpendicular to gamma');
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency perpendicular to gamma');
 
-%figure(3);
-%loglog(FINALAMP(:,1),FINALAMP(:,4));
+figure(3);
+loglog(FINALAMP(:,1),FINALAMP(:,4));
 %hold on;
 %loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
 %hold off;
-%xlabel('Frequency (Hz)');
-%ylabel('Torque (N m)');
-%title('Torque vs frequency in the z component');
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency parallel to gamma');
 
 %figure(4);
 %loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
