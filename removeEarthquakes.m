@@ -20,7 +20,7 @@ dataDivisions = cell(maxDays,1);
 endVal = data(end,1);
 dayCount = 1;
 secCount = 1;
-while (dayCount <= maxDays)
+while (dayCount <= numDays)
 	try
 		if(data(secCount,1) <= dayLength*dayCount)
 			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];

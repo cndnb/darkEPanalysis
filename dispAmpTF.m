@@ -62,20 +62,20 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
         %Fits without weight the design matrix to the data
-        try
+        %try
           [ZBETA,ZSIGMA,ZR,ZERR,ZCOV] = ols2(driftFix{secCount,1}(:,2),...
           dZ);
           [PeXBETA,PeXSIGMA,PeXR,PeXERR,PeXCOV] = ols2(driftFix{secCount,1}(:,2),...
           dPeX);
           [PaXBETA,PaXSIGMA,PaXR,PaXERR,PaXCOV] = ols2(driftFix{secCount,1}(:,2),...
           dPaX);
-        catch
-          noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
-          [BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),...
-          noResonance);
-		      BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
-        end_try_catch
-	      preAvgZ(count,:,secCount) = ZBETA';
+        %catch
+        %  noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
+        %  [BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),...
+        %  noResonance);
+	%	      BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
+        %end_try_catch
+	preAvgZ(count,:,secCount) = ZBETA';
         preAvgPerpX(count,:,secCount) = PeXBETA';
         preAvgParaX(count,:,secCount) = PaXBETA';
       endfor
