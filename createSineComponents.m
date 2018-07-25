@@ -1,5 +1,4 @@
 function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
-  %Simple statement of usage
   if (nargin != 2)
     usage ("X = createSineComponents(t,f)");
   endif

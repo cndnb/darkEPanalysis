@@ -1,6 +1,7 @@
 %function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
 function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
 
+
   if (nargin != 6)
     usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,fitIsWeighted,displayOut)');
   endif
@@ -18,6 +19,7 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
   preAvgZ = zeros(endCount,2,rows(driftFix));
   preAvgPerpX = zeros(endCount,2,rows(driftFix));
   preAvgParaX = zeros(endCount,2,rows(driftFix));
+
   %Runs the fitter over each bin to find the amplitude at each frequency
   if (weighted) %Performs weighted OLS fit
     for secCount = 1:rows(driftFix)
@@ -65,15 +67,18 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
         try
           [ZBETA,ZSIGMA,ZR,ZERR,ZCOV] = ols2(driftFix{secCount,1}(:,2),...
           dZ);
-          [PeXBETA,PeXSIGMA,PeXR,PeXERR,PeXCOV] = ols2(driftFix{secCount,1}(:,2),...
+          [PeXBETA,PeXSIGMA,PeXR,PeXERR,PeXCOV] = ols2(driftFix{secCount,1}(:,2)-dZ*ZBETA,...
           dPeX);
-          [PaXBETA,PaXSIGMA,PaXR,PaXERR,PaXCOV] = ols2(driftFix{secCount,1}(:,2),...
+          [PaXBETA,PaXSIGMA,PaXR,PaXERR,PaXCOV] = ols2(driftFix{secCount,1}(:,2)-dZ*ZBETA,...
           dPaX);
         catch
-          noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
-          [BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),...
-          noResonance);
-		      BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
+          rank(designX)
+          designX
+          fflush(stdout);
+          %noResonance = [designX(:,1:6),designX(:,9:numBETAVal)];
+          %[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),...
+          %noResonance);
+		      %BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
         end_try_catch
 	      preAvgZ(count,:,secCount) = ZBETA';
         preAvgPerpX(count,:,secCount) = PeXBETA';

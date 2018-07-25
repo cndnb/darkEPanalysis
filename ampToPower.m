@@ -1,6 +1,5 @@
 %function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
-function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
-  
+function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)  
   if(nargin != 7)
     usage('[FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)');
   endif
@@ -11,10 +10,15 @@ function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
   %  usage('ampError = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
   %endif
   
-  ampMod = ones(rows(freqArray),2); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
+  ampMod = ones(rows(freqArray),4); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
   ampMod(:,1) = freqArray; %Gets frequencies
   
   valDim = size(pAZ);
+  try
+    valDim(3)
+  catch
+    valDim = [valDim,1];
+  end_try_catch
   preAvgZ = ones(rows(freqArray),valDim(3));
   for count = 1:valDim(3)
     preAvgZ = sqrt(pAZ(:,1,count).^2 + pAZ(:,2,count).^2);
@@ -22,6 +26,7 @@ function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
     preAvgParaX = sqrt(pAPaX(:,1,count).^2 + pAPaX(:,2,count).^2);
   endfor
   
+
   ampMod(:,2) = sum(preAvgZ,2)./columns(preAvgZ);
   ampMod(:,3) = sum(preAvgPerpX,2)./columns(preAvgPerpX);
   ampMod(:,4) = sum(preAvgParaX,2)./columns(preAvgParaX);

@@ -77,11 +77,12 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %Number of days in the data considered
-daysInclude = 3;
+daysInclude = 0;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 pkg load signal;
 
@@ -94,11 +95,18 @@ if (!exist('d'))
   d(:,3) = weightVal;
   newD = [d(195000:235000,:);d(370000:410000,:)];
 endif
-omegaEarth = 2*pi*(1/86164.0916);
-t = (1:rows(newD))';
-X = [ones(rows(t),1)];%,t,sin(omegaEarth.*t),cos(omegaEarth.*t)];
-[DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
-preDF = [newD(:,1),newD(:,2) - X*DFB];%,newD(:,3)];
+if (!exist('preDF'))
+  omegaEarth = 2*pi*(1/86164.0916);
+  t = newD(:,1);
+  X = [ones(rows(t),1),t];
+  [DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
+  if(fitIsWeighted)
+    preDF = [d(:,1),d(:,2) - X*DFB,d(:,3)];
+  else
+    preDF = [newD(:,1),newD(:,2) - X*DFB];
+  endif
+endif
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -116,9 +124,12 @@ areaRemove = 10000;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+if(!exist('driftFix'))
+  [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+endif
 
-fullLength = rows(driftFix{1,1});
+checkLength = cell2mat(driftFix(:,1));
+fullLength = rows(checkLength);
 
 if (testing)
   %Makes plotting more simple
@@ -185,6 +196,7 @@ endfor
 %[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
 [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -195,6 +207,7 @@ FINALERR = ones(rows(freqArray),3);%,4);
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
 [FINALAMP, FINALERR] = ampToPower(preAvgZ,preAvgPerpX,preAvgParaX,freqArray,kappa,f0,Q);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

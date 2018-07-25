@@ -19,19 +19,21 @@ dataDivisions = cell(maxDays,1);
 
 endVal = data(end,1);
 dayCount = 1;
-secCount = 1;
-while (dayCount <= maxDays)
-	try
-		if(data(secCount,1) <= dayLength*dayCount)
-			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
-			secCount = secCount + 1;
-		else 
-			dayCount = dayCount + 1;
-		endif
-	catch
-		dayCount = dayCount + 1;
-	end_try_catch
-endwhile
+
+modCount = mod(data(:,1),86400);
+previousDay = 1;
+lastNum = 1;
+for secCount = 1:rows(data)
+  secCount
+  fflush(stdout);
+  if(modCount(secCount) < lastNum)
+    dataDivisions{dayCount,1} = data(previousDay:secCount,:);
+    previousDay = secCount;
+    dayCount = dayCount + 1;
+  endif
+  lastNum = modCount(secCount);
+endfor
+dataDivisions{dayCount+1,1} = data(previousDay:rows(data),:);
 
 
 %Prepares torque array to have points removed.
