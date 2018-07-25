@@ -42,18 +42,25 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
 
 endfunction
 
-%!test
-%! G = createSineComponents(0,1);
-%! assert(G  == [ 0,0,0,1,0,1,0,1,0,1] );
+#%!test
+#%! G = createSineComponents(0,1);
+#%! assert(G  == [ 0,0,0,1,0,1,0,1,0,1] );
+
+#%!%test
+#%!% b=1:10000;
+#%!% b=b';
+#%!% X = createSineComponents(b,pi);
+#%!% assert (rank(X'*X) == columns(X))
+
+#%!%test
+#%!% b=1:10000;
+#%!% b=b';
+#%!% X = createSineComponents(b,pi);
+#%!% assert (b == X(:,(columns(X)-1)))
 
 %!test
-%! b=1:10000;
+%! b=10000:20000;
 %! b=b';
-%! X = createSineComponents(b,pi);
-%! assert (rank(X'*X) == columns(X))
-
-%!test
-%! b=1:10000;
-%! b=b';
-%! X = createSineComponents(b,pi);
-%! assert (b == X(:,(columns(X)-1)))
+%! [dZ,dPeX,dPaX] = createSineComponents(b,pi);
+%! f = 2*pi*pi; checkX = [sin(f.*b),cos(f.*b)];
+%! assert(dZ,checkX);

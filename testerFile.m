@@ -111,7 +111,7 @@ endif
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
-calcTorque = torque(d, I, kappa);
+calcTorque = torque(newD, I, kappa);
 
 %This is the value above which torque is considered an earthquake
 threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
@@ -195,6 +195,22 @@ endfor
   
 %[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
 [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
+
+
+%Correction for fake dataset
+freq = 9e-3;
+phaseCorrection = ones(rows(freqArray),1,daysInclude);
+for count = 1:rows(freqArray)
+	for dayCount = 1:daysInclude
+		[dZ,dPeX,dPaX] = createSineComponents(driftFix{dayCount,1}(:,1),freqArray(count));
+		[b1,s1,r1,err1,cov1] = ols2(driftFix{dayCount,1}(:,2),dZ);
+		phaseCorrection(count,1,dayCount) = angle(b1(2,1) + i.*b1(1,1));
+	endfor
+endfor
+compOut = preAvgZ(:,2,:) + i.*preAvgZ(:,1,:);
+compOut = compOut.*phaseCorrection;
+assert(angle(compOut),zeros(size(compOut)),2*eps);
+preAvgZ = [real(compOut),imag(compOut)];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

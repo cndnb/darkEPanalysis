@@ -21,13 +21,17 @@ function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
   end_try_catch
   preAvgZ = ones(rows(freqArray),valDim(3));
   for count = 1:valDim(3)
-    preAvgZ = sqrt(pAZ(:,1,count).^2 + pAZ(:,2,count).^2);
+    %preAvgZ = sqrt(pAZ(:,1,count).^2 + pAZ(:,2,count).^2);
     preAvgPerpX = sqrt(pAPeX(:,1,count).^2 + pAPeX(:,2,count).^2);
     preAvgParaX = sqrt(pAPaX(:,1,count).^2 + pAPaX(:,2,count).^2);
   endfor
+
   
 
-  ampMod(:,2) = sum(preAvgZ,2)./columns(preAvgZ);
+
+  preAvgZ = mean(pAZ,3);
+  ampMod(:,2) = sqrt(pAZ(:,1).^2 + pAZ(:,2).^2);
+  %ampMod(:,2) = sum(preAvgZ,2)./columns(preAvgZ);
   ampMod(:,3) = sum(preAvgPerpX,2)./columns(preAvgPerpX);
   ampMod(:,4) = sum(preAvgParaX,2)./columns(preAvgParaX);
   %ampMod(:,2) = sqrt(ampFreq(:,1).^2 + ampFreq(:,2).^2);

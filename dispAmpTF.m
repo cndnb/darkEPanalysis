@@ -64,7 +64,7 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
         %Fits without weight the design matrix to the data
-        try
+        %try
           [ZBETA,ZSIGMA,ZR,ZERR,ZCOV] = ols2(driftFix{secCount,1}(:,2),...
           dZ);
           [PeXBETA,PeXSIGMA,PeXR,PeXERR,PeXCOV] = ols2(driftFix{secCount,1}(:,2)-dZ*ZBETA,...

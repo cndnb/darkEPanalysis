@@ -20,6 +20,7 @@ dataDivisions = cell(maxDays,1);
 endVal = data(end,1);
 dayCount = 1;
 
+
 modCount = mod(data(:,1),86400);
 previousDay = 1;
 lastNum = 1;
@@ -34,6 +35,21 @@ for secCount = 1:rows(data)
   lastNum = modCount(secCount);
 endfor
 dataDivisions{dayCount+1,1} = data(previousDay:rows(data),:);
+
+%secCount = 1;
+%while (dayCount <= numDays)
+%	try
+%		if(data(secCount,1) <= dayLength*dayCount)
+%			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
+%			secCount = secCount + 1;
+%		else 
+%			dayCount = dayCount + 1;
+%		endif
+%	catch
+%		dayCount = dayCount + 1;
+%	end_try_catch
+%endwhile
+
 
 
 %Prepares torque array to have points removed.
