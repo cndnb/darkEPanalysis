@@ -33,22 +33,24 @@ while (dayCount <= numDays)
 	end_try_catch
 endwhile
 
+size(dataDivisions)
+fflush(stdout);
 
 %Prepares torque array to have points removed.
 noEarthTorque = torque;
 
 %Goes through each point to check if torque is above threshold, sets points
 %over threshold to zero
-count = maxDays;
+count = numDays;
 while(count > 0)
 	aMatrix = dataDivisions{count,1};
 	if(rows(aMatrix) == 0)
 		dataDivisions(count,:) = [];
 	else
-		indS = aMatrix(rows(aMatrix),1);
+		indS = rows(aMatrix);
 		noVal = 0;
-		while (indS > aMatrix(1,1))
-			if (abs(torque(indS,2))>(threshold)) %If torque at time exceeds threshold    
+		while (indS > 0)
+			if (abs(torque(aMatrix(indS,1),2))>(threshold)) %If torque at time exceeds threshold    
 				%Removes all points within areaRemove of the earthquake point
 				if (testing)
 					count
@@ -56,8 +58,8 @@ while(count > 0)
 					fflush(stdout);
 				endif
 				%Displacement points removal
-				back = ((indS-aMatrix(1,1))-areaRemove);
-				forward = ((indS-aMatrix(1,1))+areaRemove);
+				back = (indS-areaRemove);
+				forward = (indS+areaRemove);
 				if (back < 1) %If removal area leaks into previous day
 					try %Attempt to remove points from previous day
 						subMatrix = dataDivisions{count - 1,1}; %Accesses next day

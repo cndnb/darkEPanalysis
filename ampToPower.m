@@ -1,8 +1,8 @@
 %function [FAMP,FERR] = ampToPower(ampFreq,ampError,freqArray,kappa,f0,Q)
-function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
+function [FAMP,FERR,FPHASE] = ampToPower(PcO,freqArray,kappa,f0,Q)
   
-  if(nargin != 7)
-    usage('[FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)');
+  if(nargin != 5)
+    usage('[FAMP,FERR] = ampToPower(valueStuff,freqArray,kappa,f0,Q)');
   endif
   %if(columns(ampFreq) < 7)
   %  usage('ampFreq = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
@@ -11,21 +11,26 @@ function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
   %  usage('ampError = [Frequency,ParGammaCos,ParGammaSine,PerpGammaCos,PerpGammaSine,Zcos,ZSine,...]');
   %endif
   
-  ampMod = ones(rows(freqArray),2); %1-Time, 2-ParGamma 3-perpGamma 4-z 5-sum
+  ampMod = ones(rows(freqArray),3); %3-ParGamma 2-perpGamma 1-z
   ampMod(:,1) = freqArray; %Gets frequencies
   
-  valDim = size(pAZ);
-  preAvgZ = ones(rows(freqArray),valDim(3));
-  for count = 1:valDim(3)
+  %valDim = size(pAZ);
+  %preAvgZ = ones(rows(freqArray),valDim(3));
+  %for count = 1:valDim(3)
     %preAvgZ = sqrt(pAZ(:,1,count).^2 + pAZ(:,2,count).^2);
-    preAvgPerpX = sqrt(pAPeX(:,1,count).^2 + pAPeX(:,2,count).^2);
-    preAvgParaX = sqrt(pAPaX(:,1,count).^2 + pAPaX(:,2,count).^2);
+    %preAvgPerpX = sqrt(pAPeX(:,1,count).^2 + pAPeX(:,2,count).^2);
+    %preAvgParaX = sqrt(pAPaX(:,1,count).^2 + pAPaX(:,2,count).^2);
+  %endfor
+
+
+  tau = transferFunction(freqArray,kappa,f0,Q);
+  avgVal = mean(PcO,3);
+  for count = 1:columns(ampMod)
+  	ampMod(:,count) = avgVal(:,count)./tau;
   endfor
-  preAvgZ = mean(pAZ,3);
-  ampMod(:,2) = sqrt(pAZ(:,1).^2 + pAZ(:,2).^2);
   %ampMod(:,2) = sum(preAvgZ,2)./columns(preAvgZ);
-  ampMod(:,3) = sum(preAvgPerpX,2)./columns(preAvgPerpX);
-  ampMod(:,4) = sum(preAvgParaX,2)./columns(preAvgParaX);
+  %ampMod(:,3) = sum(preAvgPerpX,2)./columns(preAvgPerpX);
+  %ampMod(:,4) = sum(preAvgParaX,2)./columns(preAvgParaX);
   %ampMod(:,2) = sqrt(ampFreq(:,1).^2 + ampFreq(:,2).^2);
   %ampMod(:,2) = sqrt(ampFreq(:,3).^2 + ampFreq(:,5).^2);%ParGamma
   %ampMod(:,3) = sqrt(ampFreq(:,2).^2 + ampFreq(:,4).^2);%PerpGamma
@@ -34,9 +39,9 @@ function [FAMP,FERR] = ampToPower(pAZ,pAPeX,pAPaX,freqArray,kappa,f0,Q)
   %ampFreq(:,5).^2 + ampFreq(:,6).^2 + ampFreq(:,7).^2); %Sum
   %We have sum in quadrature amplitudes for each direction
   
-  ampMod(:,2:4) = abs(ampMod(:,2:4)./transferFunction(ampMod(:,1),kappa,f0,Q));
   %ampMod(:,2:5) = abs(ampMod(:,2:5)./transferFunction(ampMod(:,1),kappa,f0,Q));
-  FAMP = ampMod;
+  FAMP = [freqArray,abs(ampMod)];
+  FPHASE = [freqArray,angle(ampMod)];
   %Divides by transfer function to get power(frequency)
   
   errMod = ones(rows(freqArray),4);

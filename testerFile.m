@@ -103,10 +103,10 @@ preDF = [newD(:,1),newD(:,2) - X*DFB];%,newD(:,3)];
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
-calcTorque = torque(newD, I, kappa);
+calcTorque = torque(d, I, kappa);
 
 %This is the value above which torque is considered an earthquake
-threshold = 1e-13 + mean(calcTorque(3:(1e6-2),2));
+threshold = 1e-13 + mean(calcTorque(3:(end-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
 
@@ -117,6 +117,9 @@ areaRemove = 10000;
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
 [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+%driftFix = cell(2,1);
+%driftFix{1,1} = preDF(1:40002,:);
+%driftFix{2,1} = preDF(40002:rows(preDF),:);
 
 fullLength = rows(driftFix{1,1});
 
@@ -183,22 +186,26 @@ for count = 1:endCount
 endfor
   
 %[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
-[preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
+valueStuff = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
 
 %Correction for fake dataset
 freq = 9e-3;
-phaseCorrection = ones(rows(freqArray),1,daysInclude);
+phaseCorrection = ones(rows(freqArray),3,rows(driftFix));
 for count = 1:rows(freqArray)
-	for dayCount = 1:daysInclude
+	for dayCount = 1:rows(driftFix)
 		[dZ,dPeX,dPaX] = createSineComponents(driftFix{dayCount,1}(:,1),freqArray(count));
-		[b1,s1,r1,err1,cov1] = ols2(driftFix{dayCount,1}(:,2),dZ);
-		phaseCorrection(count,1,dayCount) = angle(b1(2,1) + i.*b1(1,1));
+		[bZ,sZ,rZ,errZ,covZ] = ols2(driftFix{dayCount,1}(:,2),dZ);
+		[bPeX,sPeX,rPeX,errPeX,covPeX] = ols2(driftFix{dayCount,1}(:,2),dPeX);
+		[bPaX,sPaX,rPaX,errPaX,covPaX] = ols2(driftFix{dayCount,1}(:,2),dPaX);
+		bC = [bZ;bPeX;bPaX];
+		phaseCorrection(count,1,dayCount) = angle(bC(2,1)+i.*bC(1,1));
+		phaseCorrection(count,2,dayCount) = angle(bC(4,1)+i.*bC(3,1));
+		phaseCorrection(count,3,dayCount) = angle(bC(6,1)+i.*bC(5,1));
 	endfor
 endfor
-compOut = preAvgZ(:,2,:) + i.*preAvgZ(:,1,:);
-compOut = compOut.*phaseCorrection;
+PcO = [valueStuff(:,2,:) + i.*valueStuff(:,1,:),valueStuff(:,4,:) + i.*valueStuff(:,3,:),valueStuff(:,6,:) + i.*valueStuff(:,5,:)];
+PcO = PcO.*exp(-i.*phaseCorrection);
 assert(angle(compOut),zeros(size(compOut)),2*eps);
-preAvgZ = [real(compOut),imag(compOut)];
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -209,7 +216,7 @@ FINALERR = ones(rows(freqArray),3);%,4);
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR] = ampToPower(preAvgZ,preAvgPerpX,preAvgParaX,freqArray,kappa,f0,Q);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(PcO,freqArray,kappa,f0,Q);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

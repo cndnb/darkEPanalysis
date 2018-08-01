@@ -1,11 +1,11 @@
 %function [AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
-function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
+function rtn = dispAmpTF(driftFix,frequencies,endCount,linearColumn,weighted,displayOut)
 
   if (nargin != 6)
     usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,endCount,linearColumn,fitIsWeighted,displayOut)');
   endif
 
-  numBETAVal = columns(createSineComponents(1,1));
+  numBETAVal = 6;%columns(createSineComponents(1,1));
   
   %Accumulation arrays
   %Amplitude at each frequency
@@ -13,11 +13,11 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
   %Error of each amplitude value
   ampError = zeros(endCount,numBETAVal);
 
-
+  valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
   %Creates array to collect chunk values for mean/stdev
-  preAvgZ = zeros(endCount,2,rows(driftFix));
-  preAvgPerpX = zeros(endCount,2,rows(driftFix));
-  preAvgParaX = zeros(endCount,2,rows(driftFix));
+  %preAvgZ = zeros(endCount,2,rows(driftFix));
+  %preAvgPerpX = zeros(endCount,2,rows(driftFix));
+  %preAvgParaX = zeros(endCount,2,rows(driftFix));
   %Runs the fitter over each bin to find the amplitude at each frequency
   if (weighted) %Performs weighted OLS fit
     for secCount = 1:rows(driftFix)
@@ -56,15 +56,15 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
           count
           fflush(stdout);
         endif
-        [dZ,dPeX,dPaX] = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
-        if (linearColumn != 0)
-          %Prevents linear and constant term from becoming degenerate
-          designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
-        endif
+        [pZ,dPeX,dPaX] = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
+        %if (linearColumn != 0)
+        %  %Prevents linear and constant term from becoming degenerate
+        %  designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
+        %endif
         %Fits without weight the design matrix to the data
         %try
           [ZBETA,ZSIGMA,ZR,ZERR,ZCOV] = ols2(driftFix{secCount,1}(:,2),...
-          dZ);
+	  pZ);
           [PeXBETA,PeXSIGMA,PeXR,PeXERR,PeXCOV] = ols2(driftFix{secCount,1}(:,2),...
           dPeX);
           [PaXBETA,PaXSIGMA,PaXR,PaXERR,PaXCOV] = ols2(driftFix{secCount,1}(:,2),...
@@ -75,9 +75,9 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
         %  noResonance);
 	%	      BETA = [BETA(1:6,:);zeros(2,columns(BETA));BETA(7:end,:)];
         %end_try_catch
-	preAvgZ(count,:,secCount) = ZBETA';
-        preAvgPerpX(count,:,secCount) = PeXBETA';
-        preAvgParaX(count,:,secCount) = PaXBETA';
+	valueStuff(count,1:2,secCount) = ZBETA';
+        valueStuff(count,3:4,secCount) = PeXBETA';
+        valueStuff(count,5:6,secCount) = PaXBETA';
       endfor
     endfor
   endif
@@ -95,7 +95,7 @@ function [preAvgZ,preAvgPerpX,preAvgParaX] = dispAmpTF(driftFix,frequencies,endC
 %  endif
 %  
 %  %Returns
-%  rtn = valueStuff;
+  rtn = valueStuff;
 %  %AMP = ampFreq;
 %  %ERR = ampError;
 endfunction

@@ -15,6 +15,10 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   dPeX = ones(length(timeData),2);
   dPaX = ones(length(timeData),2);
   
+  %Z component
+  dZ(:,1)= sin(omegaSearch.*timeData);
+  dZ(:,2)= cos(omegaSearch.*timeData);
+
   %Perpendicular to X
   dPeX(:,1)= sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   dPeX(:,2)= cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
@@ -22,11 +26,7 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   %Parallel to X
   dPaX(:,1)= sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   dPaX(:,2)= cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
-  
-  %Z component
-  dZ(:,1)= sin(omegaSearch.*timeData);
-  dZ(:,2)= cos(omegaSearch.*timeData);
-  
+   
   %Resonant frequency component
   %X(:,7) = sin((2*pi*f0).*timeData);
   %X(:,8) = cos((2*pi*f0).*timeData);
@@ -40,7 +40,8 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   
   %Constant offset component
   %X(:,3) = ones(rows(timeData),1);
-
+  
+  %rtn = X;
 endfunction
 
 #%!test
