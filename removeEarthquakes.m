@@ -4,7 +4,7 @@ if (!exist('testing'))
   testing = 0;
 endif
 
-dayLength = 86400; %seconds
+dayLength = 86164; %seconds
 maxDays = ceil(data(rows(data),1)/dayLength);
 if (daysInclude == 0) %Fits the maximum number of days in the data
   numDays = maxDays;
@@ -19,19 +19,37 @@ dataDivisions = cell(maxDays,1);
 
 endVal = data(end,1);
 dayCount = 1;
-secCount = 1;
-while (dayCount <= numDays)
-	try
-		if(data(secCount,1) <= dayLength*dayCount)
-			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
-			secCount = secCount + 1;
-		else 
-			dayCount = dayCount + 1;
-		endif
-	catch
-		dayCount = dayCount + 1;
-	end_try_catch
-endwhile
+
+
+modCount = mod(data(:,1),86400);
+previousDay = 1;
+lastNum = 1;
+for secCount = 1:rows(data)
+  secCount
+  fflush(stdout);
+  if(modCount(secCount) < lastNum)
+    dataDivisions{dayCount,1} = data(previousDay:secCount - 1,:);
+    previousDay = secCount;
+    dayCount = dayCount + 1;
+  endif
+  lastNum = modCount(secCount);
+endfor
+dataDivisions{dayCount+1,1} = data(previousDay:rows(data),:);
+
+%secCount = 1;
+%while (dayCount <= numDays)
+%	try
+%		if(data(secCount,1) <= dayLength*dayCount)
+%			dataDivisions{dayCount,1} = [dataDivisions{dayCount,1};data(secCount,:)];
+%			secCount = secCount + 1;
+%		else 
+%			dayCount = dayCount + 1;
+%		endif
+%	catch
+%		dayCount = dayCount + 1;
+%	end_try_catch
+%endwhile
+
 
 size(dataDivisions)
 fflush(stdout);

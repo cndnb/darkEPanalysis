@@ -77,13 +77,14 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %Number of days in the data considered
-daysInclude = 3;
+daysInclude = 0;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
 
-pkg load signal;
+%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%pkg load signal;
 
 if (!exist('d'))
   importfakeDarkEP
@@ -92,13 +93,20 @@ if (!exist('d'))
   %weightVal = abs(F - mean(F)) + 1e-9;
   weightVal = resonanceVariance(d,chunkSize);
   d(:,3) = weightVal;
-  newD = [d(195000:235000,:);d(370000:410000,:)];
+  %newD = [d(:,1),d(:,2)];
+  %newD = [d(195000:235000,:);d(370000:410000,:)];
+  newD = d(370000:410000,:);
+  omegaEarth = 2*pi*(1/86164.0916);
+  t = newD(:,1);
+  X = [ones(rows(t),1)];%,t];%sin(omegaEarth.*t),cos(omegaEarth.*t)];
+  [DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
+  if(fitIsWeighted)
+    preDF = [d(:,1),d(:,2) - X*DFB,d(:,3)];
+  else
+    preDF = [newD(:,1),newD(:,2) - X*DFB];
+  endif
 endif
-omegaEarth = 2*pi*(1/86164.0916);
-t = (1:rows(newD))';
-X = [ones(rows(t),1)];%,t,sin(omegaEarth.*t),cos(omegaEarth.*t)];
-[DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
-preDF = [newD(:,1),newD(:,2) - X*DFB];%,newD(:,3)];
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -116,12 +124,13 @@ areaRemove = 10000;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-[driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
-%driftFix = cell(2,1);
-%driftFix{1,1} = preDF(1:40002,:);
-%driftFix{2,1} = preDF(40002:rows(preDF),:);
 
-fullLength = rows(driftFix{1,1});
+if(!exist('driftFix'))
+  [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+endif
+
+checkLength = cell2mat(driftFix(:,1));
+fullLength = rows(checkLength);
 
 if (testing)
   %Makes plotting more simple
@@ -185,38 +194,13 @@ for count = 1:endCount
   freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
 endfor
   
-%[ampFreq,ampError] = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
-valueStuff = dispAmpTF(driftFix,freqArray,endCount,linearColumn,fitIsWeighted,1);
-
-%Correction for fake dataset
-freq = 9e-3;
-phaseCorrection = ones(rows(freqArray),3,rows(driftFix));
-for count = 1:rows(freqArray)
-	for dayCount = 1:rows(driftFix)
-		[dZ,dPeX,dPaX] = createSineComponents(driftFix{dayCount,1}(:,1),freqArray(count));
-		[bZ,sZ,rZ,errZ,covZ] = ols2(driftFix{dayCount,1}(:,2),dZ);
-		[bPeX,sPeX,rPeX,errPeX,covPeX] = ols2(driftFix{dayCount,1}(:,2),dPeX);
-		[bPaX,sPaX,rPaX,errPaX,covPaX] = ols2(driftFix{dayCount,1}(:,2),dPaX);
-		bC = [bZ;bPeX;bPaX];
-		phaseCorrection(count,1,dayCount) = angle(bC(2,1)+i.*bC(1,1));
-		phaseCorrection(count,2,dayCount) = angle(bC(4,1)+i.*bC(3,1));
-		phaseCorrection(count,3,dayCount) = angle(bC(6,1)+i.*bC(5,1));
-	endfor
-endfor
-PcO = [valueStuff(:,2,:) + i.*valueStuff(:,1,:),valueStuff(:,4,:) + i.*valueStuff(:,3,:),valueStuff(:,6,:) + i.*valueStuff(:,5,:)];
-PcO = PcO.*exp(-i.*phaseCorrection);
-assert(angle(compOut),zeros(size(compOut)),2*eps);
+[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1,0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%Creates array for final data
-FINALAMP = ones(rows(freqArray),3);%,5);
-FINALERR = ones(rows(freqArray),3);%,4);
-
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(PcO,freqArray,kappa,f0,Q);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
