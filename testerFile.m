@@ -195,7 +195,7 @@ for count = 1:endCount
   freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
 endfor
   
-[compAvg,compOut,compErr] = dispAmpTF(driftFix,freqArray,fullLength,linearColumn,fitIsWeighted,1,1);
+[compAvg,compOut,compErr] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
