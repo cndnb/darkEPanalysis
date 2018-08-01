@@ -4,7 +4,7 @@ if (!exist('testing'))
   testing = 0;
 endif
 
-dayLength = 86400; %seconds
+dayLength = 86164; %seconds
 maxDays = ceil(data(rows(data),1)/dayLength);
 if (daysInclude == 0) %Fits the maximum number of days in the data
   numDays = maxDays;
@@ -28,7 +28,7 @@ for secCount = 1:rows(data)
   secCount
   fflush(stdout);
   if(modCount(secCount) < lastNum)
-    dataDivisions{dayCount,1} = data(previousDay:secCount,:);
+    dataDivisions{dayCount,1} = data(previousDay:secCount - 1,:);
     previousDay = secCount;
     dayCount = dayCount + 1;
   endif

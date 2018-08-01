@@ -1,3 +1,4 @@
+%function rtn = createSineComponents(timeData,f)
 function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   if (nargin != 2)
     usage ("X = createSineComponents(t,f)");
@@ -13,18 +14,25 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   dZ = ones(length(timeData),2);
   dPeX = ones(length(timeData),2);
   dPaX = ones(length(timeData),2);
+  %X = ones(rows(timeData),6);  
   
   %Perpendicular to X
-  dPeX(:,1)= sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
-  dPeX(:,2)= cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  %X(:,3) = sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  %X(:,4) = cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  dPeX(:,1) = sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  dPeX(:,2) = cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   
   %Parallel to X
-  dPaX(:,1)= sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
-  dPaX(:,2)= cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
-  
+  %X(:,5) = sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  %X(:,6) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  dPaX(:,1) = sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  dPaX(:,2) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+
   %Z component
-  dZ(:,1)= sin(omegaSearch.*timeData);
-  dZ(:,2)= cos(omegaSearch.*timeData);
+  %X(:,1) = sin(omegaSearch.*timeData);
+  %X(:,2) = cos(omegaSearch.*timeData);
+  dZ(:,1) = sin(omegaSearch.*timeData);
+  dZ(:,2) = cos(omegaSearch.*timeData);
   
   %Resonant frequency component
   %X(:,7) = sin((2*pi*f0).*timeData);
@@ -39,6 +47,8 @@ function [dZ,dPeX,dPaX] = createSineComponents(timeData,f)
   
   %Constant offset component
   %X(:,3) = ones(rows(timeData),1);
+
+  %rtn = X;
 
 endfunction
 
