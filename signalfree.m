@@ -2,14 +2,14 @@
 %test torqueSim
 
 %Make some time
-t = 1:(3*86164);t=t';
+t = 1:40000;t=t';
 
 
 A = 1e-16;
 omegaSearch = 2*pi*9e-3;
 omegaEarth = 2*pi*(1/86164.0916);
 
-finalSignal = A.*sin(omegaSearch.*t).*sin(omegaEarth.*t);
+finalSignal = A.*sin(omegaSearch.*t);
 
 %A*(sin(omegaSearch*t));%+sin(omegaSearch*t).*cos(omegaEarth*t)+sin(omegaSearch*t).*sin(omegaEarth*t));
 
