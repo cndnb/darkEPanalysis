@@ -2,7 +2,7 @@
 %test torqueSim
 
 %Make some time
-t = 1:40000;t=t';
+t = 1:3*86400;t=t';
 
 
 A = 1e-16;

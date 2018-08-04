@@ -1,21 +1,22 @@
-function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,displayOut,phaseFix)
+function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,displayOut)
 
-  if (nargin != 6)
-    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,fitIsWeighted,displayOut,phaseFix)');
+  if (nargin != 5)
+    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,fitIsWeighted,displayOut)');
   endif
 
   numBETAVal = columns(createSineComponents(1,1));
   endCount = rows(frequencies);
 
   %Creates array to collect chunk values for mean/stdev
-  compOut = zeros(endCount,3,rows(driftFix));
-  errOut = zeros(endCount,3,rows(driftFix));
+  valueStuff = ones(endCount,6,rows(driftFix));
+  compOut = ones(endCount,3,rows(driftFix));
+  errOut = ones(endCount,3,rows(driftFix));
   startCount = 1;
 
   %Catches first frequency equal to zero
   if(frequencies(1) == 0)
 	for count = 1:rows(driftFix)
-		compOut(1,:,count) = [mean(driftFix{count,1}(:,2)),0,0];
+		valueStuff(1,:,count) = [0,mean(driftFix{count,1}(:,2)),0,0,0,0];
 	endfor
 	startCount = 2;
   endif
@@ -23,7 +24,7 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
 	for count = 1:rows(driftFix)
 		designX = sin(pi*driftFix{count,1}(:,1));
 		[altB,altS,altERR,altR,altCOV] = ols2(driftFix{count,1}(:,2),designX);
-		compOut(end,:,count) = [i.*altB,0,0];
+		valueStuff(end,:,count) = [altB,0,0,0,0,0];
 	endfor
 	endCount = endCount - 1;
   endif
@@ -54,9 +55,6 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
         %compOut(count,2,secCount) = PeXBETA(1,2) + i.*PeXBETA(1,1);
         %compOut(count,3,secCount) = PaXBETA(1,2) + i.*PaXBETA(1,1);
 	[BETA,COV] = specFreqAmp(data(:,1:2),designX,data(:,3));
-        compOut(count,1,secCount) = BETA(1,2) + i.*BETA(1,1);
-        compOut(count,2,secCount) = BETA(1,4) + i.*BETA(1,3);
-        compOut(count,3,secCount) = BETA(1,6) + i.*BETA(1,5);
       endfor
     endfor
   else %Performs unweighted OLS fit
@@ -85,31 +83,31 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
 	%compOut(count,1,secCount) = ZBETA(2,1) + i.*ZBETA(1,1);
 	%compOut(count,2,secCount) = PeXBETA(2,1) + i.*PeXBETA(1,1);
 	%compOut(count,3,secCount) = PaXBETA(2,1) + i.*PaXBETA(1,1);
-	compOut(count,1,secCount) = BETA(2,1) + i.*BETA(1,1);
-	compOut(count,2,secCount) = BETA(4,1) + i.*BETA(3,1);
-	compOut(count,3,secCount) = BETA(6,1) + i.*BETA(5,1);
+  valueStuff(count,:,secCount) = BETA';
+  compVar(count,:,secCount) = [diag(COV)'];
 	
 	%Corrects for weird phase in fake data
-	if(phaseFix)
-		for compCount = 1:3
-        		compOut(count,compCount,secCount) = compOut(count,compCount,secCount)*exp(-i*angle(compOut(count,compCount,secCount)));
-			assert(angle(compOut(count,compCount,secCount)),0,2*eps);
-		endfor
-	endif
+	%if(phaseFix)
+	%	for compCount = 1:3
+  %      		compOut(count,compCount,secCount) = compOut(count,compCount,secCount)*exp(-i*angle(compOut(count,compCount,secCount)));
+	%		assert(angle(compOut(count,compCount,secCount)),0,2*eps);
+	%	endfor
+	%endif
       endfor
     endfor
   endif
 
   if (rows(driftFix) > 1) %This is only used in testing
-    %Sums values over each bin and then averages for the mean
-    compAvg = mean(compOut,3);
+    %Weighted average over different bin sizes
+    valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
     %Sums (x-mean(x))^2 and then divides by N-1 takes the sqrt
-    ampError = std(compOut,0,3); %0 makes std use denominator N-1
+    ampError = std(valueStuff,0,3); %0 makes std use denominator N-1
   else
-    compAvg = compOut;
+    valAvg = valueStuff;
     ampError = zeros(rows(compOut),columns(compOut));
   endif
-  
+  compOut = [valueStuff(:,2,:)+ i.*valueStuff(:,1,:),valueStuff(:,4,:)+i.*valueStuff(:,3,:),valueStuff(:,6,:)+i.*valueStuff(:,5,:)];
+  compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5)];
   %Returns
   rtn = compAvg;
 

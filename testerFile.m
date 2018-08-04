@@ -77,7 +77,7 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %Number of days in the data considered
-daysInclude = 0;
+daysInclude = 3;
 
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
@@ -87,15 +87,16 @@ chunkSize = 10;
 %pkg load signal;
 
 if (!exist('d'))
-  importfakeDarkEP
+  %importfakeDarkEP
+  d = O;
   %f = fir1(10000,0.01,'high');
   %F = filter(f,1,d(:,2));
   %weightVal = abs(F - mean(F)) + 1e-9;
   weightVal = resonanceVariance(d,chunkSize);
   d(:,3) = weightVal;
   %newD = [d(:,1),d(:,2)];
-  %newD = [d(195000:235000,:);d(370000:410000,:)];
-  newD = d(370000:410000,:);
+  newD = [d(195000:235000,:);d(370000:410000,:)];
+  %newD = d(370000:410000,:);
   omegaEarth = 2*pi*(1/86164.0916);
   t = newD(:,1);
   X = [ones(rows(t),1)];%,t];%sin(omegaEarth.*t),cos(omegaEarth.*t)];
@@ -130,7 +131,7 @@ if(!exist('driftFix'))
 endif
 
 checkLength = cell2mat(driftFix(:,1));
-fullLength = rows(checkLength);
+fullLength = checkLength(end,1) - checkLength(1,1);
 
 if (testing)
   %Makes plotting more simple
@@ -194,7 +195,7 @@ for count = 1:endCount
   freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
 endfor
   
-[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1,0);
+[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

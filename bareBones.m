@@ -2,7 +2,9 @@
 %	importfakeDarkEP
 %endif
 %cData = d(370001:410000,:);
-signalfree
+if(!exist('O'))
+  signalfree
+endif
 cData = O;
 
 I = 378/(1e7);                                                                    
@@ -10,7 +12,6 @@ f0 = 1.9338e-3;
 Q = 500000;                                                                     
 Temp = 273+24;  
 kappa = (2*pi*f0)^2 * I;
-
 omegaEarth = 2*pi*(1/86164.0916);
 
 freqArray = (0:(rows(cData)/2))/(rows(cData));
@@ -20,16 +21,27 @@ tau = transferFunction(freqArray,kappa,f0,Q);
 dFX = [ones(rows(cData),1),(1:rows(cData))',sin(cData(:,1).*omegaEarth),cos(cData(:,1).*omegaEarth)];
 [dFB,dFS,dFR,dFERR,dFCOV] = ols2(cData(:,2),dFX);
 cData(:,2) = cData(:,2) - dFX*dFB;
+
+%Finds FFT output
 freqData = (2/rows(cData))*fft(cData(:,2));
 assert(freqData(2:rows(freqData)/2+1,:),conj(flip(freqData((rows(freqData)/2)+1:end,:))));
 freqData = freqData(1:(rows(freqData)/2+1),:);
 torqueData = abs(freqData./tau);
 
+
+startVal = 99;
+freqArray(startVal+2)
+endVal = 48999;
+freqArray(rows(freqArray) - 1 - endVal)
+rows(freqArray) - endVal - 1
+fflush(stdout);
+pause();
+
 collectionArray = ones(rows(freqArray),3);
 cAS = ones(rows(freqArray),3);
 covArray = ones(6,6,rows(freqArray));
 rows(freqArray)
-for freq = 2:rows(freqArray) - 1
+for freq = 2+startVal:rows(freqArray) - 1 - endVal
 	freq
 	fflush(stdout);
 	designX = createSineComponents(cData(:,1),freqArray(freq));
