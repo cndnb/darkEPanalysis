@@ -9,6 +9,7 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
 
   %Creates array to collect chunk values for mean/stdev
   valueStuff = ones(endCount,6,rows(driftFix));
+  compVar = ones(endCount,6,rows(driftFix));
   compOut = ones(endCount,3,rows(driftFix));
   errOut = ones(endCount,3,rows(driftFix));
   startCount = 1;

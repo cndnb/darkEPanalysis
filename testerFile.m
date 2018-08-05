@@ -65,8 +65,6 @@ numBETAVal = columns(createSineComponents(1,1));
 %be performed on--in this analysis, it is second to last.
 linearColumn = 0;%numBETAVal - 1;
 
-%Multiples of smallest usable frequency between amplitude points
-jump = 1;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
@@ -77,7 +75,7 @@ stopFreq = 1e-2;
 fitIsWeighted = 0;
 
 %Number of days in the data considered
-daysInclude = 3;
+daysInclude = 0;
 
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
@@ -87,13 +85,16 @@ chunkSize = 10;
 %pkg load signal;
 
 if (!exist('d'))
-  %importfakeDarkEP
-  d = O;
+  importfakeDarkEP
+  %d = O;
+  
+  %Weighting
   %f = fir1(10000,0.01,'high');
   %F = filter(f,1,d(:,2));
   %weightVal = abs(F - mean(F)) + 1e-9;
-  weightVal = resonanceVariance(d,chunkSize);
-  d(:,3) = weightVal;
+  %weightVal = resonanceVariance(d,chunkSize);
+  %d(:,3) = weightVal;
+  
   %newD = [d(:,1),d(:,2)];
   newD = [d(195000:235000,:);d(370000:410000,:)];
   %newD = d(370000:410000,:);
@@ -114,21 +115,22 @@ endif
 %Calculates the torque at each point, puts into an array for analysis
 calcTorque = torque(d, I, kappa);
 
+%number of seconds in a bin
+dayLength = 86164; %seconds
 %This is the value above which torque is considered an earthquake
 threshold = 1e-13 + mean(calcTorque(3:(end-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = 10000;
-
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-
-if(!exist('driftFix'))
-  [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
-endif
+driftFix = dayDivision(preDF,daysInclude,dayLength);
+%if(!exist('driftFix'))
+%  [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
+%endif
 
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
@@ -185,15 +187,34 @@ endif
 %endCount is the #rows of frequency matrix
 %endCout = total frequency band divided by the smallest frequency jump
 %Integer so that it can be used for indexing
-endCount = floor((stopFreq-startFreq)/(jump*(1/fullLength)))+1
-fflush(stdout);
 
-freqArray = ones(endCount,1);
-  
-%Assigns frequency values for the first column of the frequency and error arrays
-for count = 1:endCount
-  freqArray(count,1) = (startFreq+((count-1)*jump*(1/fullLength))); %fullLength passed before earthquakes removed
+freqArray = 1:(floor(fullLength/2));
+freqArray = [0,freqArray];
+freqArray = freqArray';
+freqArray = freqArray./fullLength;
+
+tempStart = freqArray - startFreq.*ones(rows(freqArray),1);
+tempEnd = freqArray - stopFreq.*ones(rows(freqArray),1);
+pastMinStart = Inf;
+pastMinEnd = Inf;
+minIndStart = 0;
+minIndEnd = 0;
+for count = 1:rows(freqArray)
+  if (abs(tempStart(count)) < pastMinStart)
+    pastMinStart = abs(tempStart(count));
+    minIndStart = count;
+  endif
+  if (abs(tempEnd(count)) < pastMinEnd)
+    pastMinEnd = abs(tempEnd(count));
+    minIndEnd = count;
+  endif
 endfor
+indStart = minIndStart;
+indEnd = minIndEnd;
+freqArray = freqArray(indStart:indEnd,1);
+
+rows(freqArray)
+fflush(stdout);
   
 [compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1);
 
@@ -206,36 +227,36 @@ endfor
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plots torque power as a function of frequency
-figure(1);
-loglog(FINALAMP(:,1),FINALAMP(:,2));
-%hold on;
-%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
-%hold off;
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency parallel to Z');
-
-figure(2);
-loglog(FINALAMP(:,1),FINALAMP(:,3));
-%hold on;
-%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
-%hold off;
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency perpendicular to gamma');
-
-figure(3);
-loglog(FINALAMP(:,1),FINALAMP(:,4));
-%hold on;
-%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
-%hold off;
-xlabel('Frequency (Hz)');
-ylabel('Torque (N m)');
-title('Torque vs frequency parallel to gamma');
-
-%figure(4);
-%loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP(:,1),FINALAMP(:,3),FINALAMP(:,1),FINALAMP(:,4),FINALAMP(:,1),FINALAMP(:,5));
-%legend('Parallel to gamma','Perpendicular to gamma','Z component','Sum signal');
+%figure(1);
+%loglog(FINALAMP(:,1),FINALAMP(:,2));
+%%hold on;
+%%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
+%%hold off;
 %xlabel('Frequency (Hz)');
 %ylabel('Torque (N m)');
-%title('Torque vs frequency');
+%title('Torque vs frequency parallel to Z');
+
+%figure(2);
+%loglog(FINALAMP(:,1),FINALAMP(:,3));
+%%hold on;
+%%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
+%%hold off;
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N m)');
+%title('Torque vs frequency perpendicular to gamma');
+
+%figure(3);
+%loglog(FINALAMP(:,1),FINALAMP(:,4));
+%%hold on;
+%%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
+%%hold off;
+%xlabel('Frequency (Hz)');
+%ylabel('Torque (N m)');
+%title('Torque vs frequency parallel to gamma');
+
+figure(4);
+loglog(FINALAMP(:,1),[FINALAMP(:,2),FINALAMP(:,3),FINALAMP(:,4)]);
+legend('Z component','Perpendicular to gamma','Parallel to gamma');
+xlabel('Frequency (Hz)');
+ylabel('Torque (N m)');
+title('Torque vs frequency');
