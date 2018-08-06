@@ -126,9 +126,9 @@ areaRemove = 10000;
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
 
-if(!exist('driftFix'))
-  [driftFix,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,daysInclude);
-endif
+[noEarthquakes,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove);
+
+driftFix = dayDivision(noEarthquakes,daysInclude,<something>);
 
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
