@@ -1,25 +1,25 @@
 function [retB,retC] = weightedOLS(Y,X,sigma)
-   if (nargin != 3)
-    usage ("[BETA, COV] = weightedOLS (X,Y,sigma); %Sigma is a column vector");
-  endif
+	if (nargin != 3)
+    		error("[BETA, COV] = weightedOLS (X,Y,sigma); %Sigma is a column vector");
+  	endif
   
-  [nr, nc] = size (X);
-  [ry, cy] = size (Y);
-  if (nr != ry)
-    error ("ols2: incorrect matrix dimensions");
-  endif
+	[nr, nc] = size (X);
+	[ry, cy] = size (Y);
+  	if (nr != ry)
+    		error ("ols2: incorrect matrix dimensions");
+  	endif
 
-  W = diag(1 ./(sigma(:,1).^2));
-  Z = X' * W * X;
+  	W = diag(1 ./(sigma(:,1).^2));
+  	Z = X' * W * X;
 
-  BETA = inv (Z) * X' * W * Y;
+  	BETA = inv (Z) * X' * W * Y;
   
-  %This is the error on the amplitude fit parameters.
-  COV = inv(Z);
+  	%This is the error on the amplitude fit parameters.
+ 	COV = inv(Z);
   
-  
-  retB = BETA;
-  retC = COV;
+  	%Returns
+  	retB = BETA;
+  	retC = COV;
 endfunction
 
 %!test
