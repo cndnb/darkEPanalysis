@@ -1,26 +1,3 @@
-%%%%%%%%%%%%%%%%%%%% UNIT TESTS/PRELIMINARY CHECKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-testing = 0;
-
-if (testing)
-  'dispAmpTF'
-  test dispAmpTF
-  'createSineComponents'
-  test createSineComponents
-  'frequencyVariance'
-  test frequencyVariance
-  'specFreqAmp'
-  test specFreqAmp
-  'weightedOLS'
-  test weightedOLS
-  'transferFunction'
-  test transferFunction
-  'ampToPower'
-  test ampToPower
-
-  fflush(stdout);
-  pause()
-endif
-
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -80,8 +57,9 @@ daysInclude = 0;
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
 
-%Boolean if true (1) will remove earthquakes
-removeEQ = 0;
+%boolean to show output on terminal
+showOut = 1;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -133,18 +111,15 @@ areaRemove = 10000;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-driftFix = cell(daysInclude,2);
-if(removeEQ)
-  [noEarthquakes,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove);
-  driftFix = dayDivision(noEarthquakes,daysInclude,dayLength);
-else
-  driftFix = dayDivision(preDF,daysInclude,dayLength);
-endif
+[noEarthquakes,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove,showOut);
 
+
+driftFix = dayDivision(noEarthquakes,daysInclude,dayLength,showOut);
 
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
 
+testing = 0;
 if (testing)
   %Makes plotting more simple
   numRows = 0;
@@ -229,7 +204,7 @@ rows(freqArray)
 fflush(stdout);
 pause();
 
-[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1);
+[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,showOut);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -273,3 +248,26 @@ legend('Z component','Perpendicular to gamma','Parallel to gamma');
 xlabel('Frequency (Hz)');
 ylabel('Torque (N m)');
 title('Torque vs frequency');
+
+
+%!test
+%! disp('removeEarthquakes');
+%! test removeEarthquakes
+%! disp('dayDivision')
+%! test dayDivision
+%! disp('dispAmpTF');
+%! test dispAmpTF
+%! disp('createSineComponents');
+%! test createSineComponents
+%! disp('frequencyVariance');
+%! test frequencyVariance
+%! disp('specFreqAmp');
+%! test specFreqAmp
+%! disp('weightedOLS');
+%! test weightedOLS
+%! disp('transferFunction');
+%! test transferFunction
+%! disp('ampToPower');
+%! test ampToPower
+%! disp('testerFile');
+%! fflush(stdout);

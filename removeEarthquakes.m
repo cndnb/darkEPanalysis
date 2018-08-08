@@ -1,6 +1,6 @@
-function [theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove)
-if (nargin != 4)
-  error('[theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove)');
+function [theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove,showOut)
+if (nargin != 5)
+  error('[theta,tau] = removeEarthquakes(data,torque,threshold,areaRemove,showOut)');
 endif
 
 noEarthTorque = torque;
@@ -10,10 +10,11 @@ subThresh = torque(:,2) .- threshold.*ones(rows(torque),1);
 onlyPositive = subThresh./(-abs(subThresh)) - 1;
 eqInd = find(onlyPositive);
 
-count = rows(eqInd);
-while(count > 0)
-	count
-	fflush(stdout);
+for count = 1:rows(eqInd)	
+	if (showOut)
+		count
+		fflush(stdout);
+	endif
 	back = eqInd(count) - areaRemove;
 	forward = eqInd(count) + areaRemove;
 	if (back < 1)
@@ -22,13 +23,9 @@ while(count > 0)
 	if (forward > rows(data))
 		forward = rows(data);
 	endif
-	try
-		noEarthquakes(back:forward,2) = Inf;
-		noEarthTorque(back:forward,2) = 0;
-	catch
-	end_try_catch
-	count = count - 1;
-endwhile
+	noEarthquakes(back:forward,2) = Inf;
+	noEarthTorque(back:forward,2) = 0;
+endfor
 
 %Removes points that were set to Inf in time series
 removeInd = find(isinf(noEarthquakes(:,2)));
@@ -39,3 +36,18 @@ theta = noEarthquakes;
 tau = noEarthTorque;
 
 endfunction
+
+%!test
+%! t = 1:10000; t=t';
+%! fData = [t,sin((2*pi*1/100).*t)];
+%! torqueData = [t,zeros(rows(t),1)];
+%! areaRemove = 500;
+%! threshold = .99;
+%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
+%! assert(rTime,fData);
+%! pointEarthquake = 5001;
+%! torqueData(pointEarthquake,2) = 1;
+%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
+%! assert(rTorque,[t,zeros(rows(torqueData),1)]);
+%! cTime = fData; cTime(pointEarthquake-areaRemove:pointEarthquake+areaRemove,:) = [];
+%! assert(rTime,cTime);

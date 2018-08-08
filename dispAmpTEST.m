@@ -1,34 +1,40 @@
-t = 1:9500; t=t';
-Amp = 1;
-f = 2*pi*(abs(randn)/10)
-fData = [t,Amp.*sin(f.*t)];
-%mean(fData)
-%dX = [ones(rows(t),1),t];
-%[b,s,r,err,cov] = ols2(fData(:,2),dX);
-%fData(:,2) = fData(:,2) - dX*b;
-%mean(fData)
-%fflush(stdout);
-dD = cell(1,1);
-dD{1,1} = fData;
-freqArray = ((0:(rows(t)/2))')./(rows(t));
-[compAvg,compOut,errOut] = dispAmpTF(dD,freqArray,0,0,1,0);
-fftOut = (1/rows(t)).*fft(fData(:,2));
-fftOut = fftOut(1:(rows(fftOut)/2 + 1),:);
 
-figure(1);
-loglog(freqArray,abs(abs(fftOut)-abs(compAvg(:,1)/2)));
-figure(2);
-semilogx(freqArray,angle(fftOut)-angle(compAvg(:,1)));
-%fakeSignal =(1/(1.5e6)).*ifft(-[compAvg(:,1);flip(conj(compAvg(2:end-1,1)))]);
-f
-%plot(t,[fData(:,2),fakeSignal]);
-%legend('OG','NOT OG');
-%for count = 1:rows(t)
-%	if(abs(real(fakeSignal)(count) .- fData(count,2)) > 1)
-%		[count,real(fakeSignal)(count) .- fData(count,2)]
-%		fflush(stdout);
-%	endif
-%endfor
-%assert(abs(real(fakeSignal) .- fData(:,2))< (Amp / 2));
+t= 1:10000; t=t';
+ Amp = 1;
+ freq = randn*(1/100);
+ chunkSize = 10;
+ fData = [t,Amp.*sin((2*pi*freq).*t)];
+ weightVal = resonanceVariance(fData,chunkSize);
+ fData = [fData,weightVal];
+ dataDivisions = cell(2,1);
+ dataDivisions{1,1} = fData(1:5000,:);
+ dataDivisions{2,1} = fData(5001:10000,:);
+ linearColumn = 0;
+ freqArray = (0:rows(fData)/2)'./rows(fData);
+ freqArray([1;end],:) = []; 
 
+ isWeighted = 0
+ 	[compAvg,compOut] = dispAmpTF(dataDivisions,freqArray,linearColumn,isWeighted,0);
+
+ 	compareArray = zeros(rows(freqArray),6,rows(dataDivisions));
+      	compareVar = zeros(rows(freqArray),6,rows(dataDivisions));
+ 	for secCount = 1:rows(dataDivisions)
+  		for count = 1:rows(freqArray)
+    			designX = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count));
+    			if(isWeighted)
+    				[BETA,COV] = specFreqAmp(dataDivisions{secCount,1}(:,1:2),designX,dataDivisions{secCount,1}(:,3));
+    			else
+   				[BETA,COV] = ols2(dataDivisions{secCount,1}(:,2),designX);
+				BETA = BETA';
+   			endif
+			compareVar(count,:,secCount) = diag(COV)';
+   			compareArray(count,:,secCount) = BETA;
+ 		endfor
+	endfor
+	fCA = sum(compareArray.*compareVar,3)./sum(compareVar,3);
+	fCA = [fCA(:,2) + i.*fCA(:,1),fCA(:,4) + i.*fCA(:,3),fCA(:,6) + i.*fCA(:,5)];
+	ccO = [compareArray(:,2,:) + i.*compareArray(:,1,:),compareArray(:,4,:) + i.*compareArray(:,3,:),compareArray(:,6,:) + i.*compareArray(:,5,:)];
+	assert(fCA,compAvg);
+	assert(ccO,compOut);
+ %endfor
 

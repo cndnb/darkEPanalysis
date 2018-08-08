@@ -3,12 +3,7 @@ function [retB,retC] = specFreqAmp(data,designX,weightVal)
     usage('[BETA,COV] = specFreqAmp(data,designX,weightVal)');
   endif
   %This gives the beta values of the fitted output to the search frequency with weights.
-  try
-    [freqBeta, freqCov] = weightedOLS(data(:,2),designX,weightVal);
-  catch
-    onResonanceX = [designX(:,1:6),designX(:,9:columns(designX))];
-    [freqBeta, freqCov] = weightedOLS(data(:,2),onResonanceX,weightVal);
-  end_try_catch
+  [freqBeta, freqCov] = weightedOLS(data(:,2),designX,weightVal);
 
   %Returns amplitudes of cosine/sine components at searchFreq
   retB = freqBeta';
