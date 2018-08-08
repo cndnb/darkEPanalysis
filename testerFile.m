@@ -80,6 +80,9 @@ daysInclude = 0;
 %How many periods of the specific frequency are included in weighted error fit
 chunkSize = 10;
 
+%Boolean if true (1) will remove earthquakes
+removeEQ = 0;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %pkg load signal;
@@ -95,21 +98,24 @@ if (!exist('d'))
   %weightVal = resonanceVariance(d,chunkSize);
   %d(:,3) = weightVal;
   
-  %newD = [d(:,1),d(:,2)];
-  newD = [d(195000:235000,:);d(370000:410000,:)];
-  %newD = d(370000:410000,:);
-  omegaEarth = 2*pi*(1/86164.0916);
-  t = newD(:,1);
-  X = [ones(rows(t),1)];%,t];%sin(omegaEarth.*t),cos(omegaEarth.*t)];
-  [DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
-  if(fitIsWeighted)
-    preDF = [d(:,1),d(:,2) - X*DFB,d(:,3)];
-  else
-    preDF = [newD(:,1),newD(:,2) - X*DFB];
-  endif
+
 endif
 
-
+newD = d(370000:410000,:);
+  
+%newD = [d(:,1),d(:,2)];
+%newD = [d(155000:235000,:);d(370000:450000,:)];
+%newD = d(370000:410000,:);
+omegaEarth = 2*pi*(1/86164.0916);
+t = newD(:,1);
+X = [ones(rows(t),1)];%,t];%sin(omegaEarth.*t),cos(omegaEarth.*t)];
+[DFB,DFS,DFR,DFERR,DFCOV] = ols2(newD(:,2),X);
+if(fitIsWeighted)
+  preDF = [d(:,1),d(:,2) - X*DFB,d(:,3)];
+else
+  preDF = [newD(:,1),newD(:,2) - X*DFB];
+endif
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
@@ -127,10 +133,13 @@ areaRemove = 10000;
 %driftFix{day,1} = [seconds, displacement amplitude]
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
-
-[noEarthquakes,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove);
-
-driftFix = dayDivision(noEarthquakes,daysInclude,dayLength);
+driftFix = cell(daysInclude,2);
+if(removeEQ)
+  [noEarthquakes,editTorque] = removeEarthquakes(preDF,calcTorque,threshold,areaRemove);
+  driftFix = dayDivision(noEarthquakes,daysInclude,dayLength);
+else
+  driftFix = dayDivision(preDF,daysInclude,dayLength);
+endif
 
 
 checkLength = cell2mat(driftFix(:,1));
@@ -214,9 +223,12 @@ indStart = minIndStart;
 indEnd = minIndEnd;
 freqArray = freqArray(indStart:indEnd,1);
 
+freqArray(1,1)
+freqArray(end,1)
 rows(freqArray)
 fflush(stdout);
-  
+pause();
+
 [compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -31,7 +31,7 @@ while(count > 0)
 endwhile
 
 %Removes points that were set to Inf in time series
-removeInd = find(isInf(noEarthquakes(:,2)));
+removeInd = find(isinf(noEarthquakes(:,2)));
 noEarthquakes(removeInd,:) = [];
 		
 %Returns edited arrays
