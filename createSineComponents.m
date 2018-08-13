@@ -33,19 +33,19 @@ function rtn = createSineComponents(timeData,f)
   %dPaX(:,1) = sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   %dPaX(:,2) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
 
-  %Resonant frequency component
-  %X(:,7) = sin((2*pi*f0).*timeData);
-  %X(:,8) = cos((2*pi*f0).*timeData);
-  
   %Daily mondulation component
-  %X(:,9) = sin(omegaEarth.*timeData);
-  %X(:,10) = cos(omegaEarth.*timeData);
+  X(:,7) = sin(omegaEarth.*timeData);
+  X(:,8) = cos(omegaEarth.*timeData);
   
   %Drift component
-  %X(:,9) = timeData;
+  X(:,9) = timeData;
   
   %Constant offset component
-  %X(:,3) = ones(rows(timeData),1);
+  X(:,10) = ones(rows(timeData),1);
+
+  %Resonant frequency component
+  X(:,11) = sin((2*pi*f0).*timeData);
+  X(:,12) = cos((2*pi*f0).*timeData);
 
   rtn = X;
 endfunction

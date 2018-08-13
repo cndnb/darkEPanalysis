@@ -4,13 +4,10 @@ function ret = dayDivision(data,daysInclude,dayLength,showOut)
   	endif
   
   	%Finds index of day rollover
-  	modCount = mod(data(:,1) - ones(rows(data),1),dayLength);
+  	modCount = mod(data(:,1) - data(1,1).*ones(rows(data),1),dayLength);
 	modCount = [modCount(1,1);[modCount(2:end,1) - modCount(1:end-1,1) + ones(rows(modCount)-1,1)]];
 	indVal = find(modCount./abs(modCount) - 1);
   	%Sets initial value so that first day always starts at the beginning of data
-  	if(indVal(1,1) != 1)
-    		indVal = [1;indVal];
-  	endif
   	if(indVal(end,1) != rows(data))
     		indVal = [indVal;rows(data)];
   	endif
