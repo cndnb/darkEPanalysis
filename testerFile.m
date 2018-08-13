@@ -60,6 +60,7 @@ chunkSize = 10;
 %boolean to show output on terminal
 showOut = 1;
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %pkg load signal;
@@ -84,8 +85,7 @@ newD = d(4*86164:5*86164,:);
 %newD = [d(:,1),d(:,2)];
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
-
-
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
@@ -114,8 +114,8 @@ X = [ones(rows(t),1),t-t(1,1).*ones(rows(t),1),sin(oED.*t),cos(oED.*t),sin((2*pi
 noRes = [noEarthquakes(:,1),noEarthquakes(:,2) - X*bRE];
 
 
-driftFix = dayDivision(noEarthquakes,daysInclude,dayLength,showOut);
 
+driftFix = dayDivision(noEarthquakes,daysInclude,dayLength,showOut);
 
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
@@ -168,6 +168,8 @@ indStart = minIndStart;
 indEnd = minIndEnd;
 freqArray = freqArray(indStart:indEnd,1);
 
+freqArray(1,1)
+freqArray(end,1)
 rows(freqArray)
 fflush(stdout);
 pause();
