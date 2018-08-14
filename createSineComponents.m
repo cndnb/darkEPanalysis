@@ -43,10 +43,6 @@ function rtn = createSineComponents(timeData,f)
   %Constant offset component
   X(:,10) = ones(rows(timeData),1);
 
-  %Resonant frequency component
-  X(:,11) = sin((2*pi*f0).*timeData);
-  X(:,12) = cos((2*pi*f0).*timeData);
-
   rtn = X;
 endfunction
 

@@ -40,7 +40,7 @@ global kappa = (2*pi*f0)^2 * I;
 numBETAVal = columns(createSineComponents(1,1));
 %Linear terms need constant subtracted off, need to know which column this will
 %be performed on--in this analysis, it is second to last.
-linearColumn = 9;%numBETAVal - 1;
+linearColumn = numBETAVal - 1;
 
 %Start of frequency scan
 startFreq = 1e-3;
@@ -66,8 +66,8 @@ showOut = 1;
 %pkg load signal;
 
 if (!exist('d'))
-  importfakeDarkEP
-  %d = O;
+  %importfakeDarkEP
+  d = O;
   
   %Weighting
   %f = fir1(10000,0.01,'high');
@@ -76,25 +76,31 @@ if (!exist('d'))
   %weightVal = resonanceVariance(d,chunkSize);
   %d(:,3) = weightVal;
 endif
- 
-%newD = [d(20000:86164-20000,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-newD = d(4*86164:5*86164,:);
+
+newD = d(1:3*86164,:);
+
+%newD = d(1:6*86164-20000,:); 
+%newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
+%newD = d(4*86164:5*86164,:);
 %newD = d;
 %newD = [d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
 %newD = [d(:,1),d(:,2)];
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
+
+tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
-calcTorque = torque(newD, I, kappa);
+calcTorque = torque(tFnewD, I, kappa);
 
 %number of seconds in a bin
 dayLength = 86164; %seconds
 %This is the value above which torque is considered an earthquake
-threshold = 1e-13 + mean(calcTorque(3:(end-2),2));
+threshold = 1e-12 + mean(calcTorque(3:(end-2),2));
+%threshold = 1e-13 + mean(calcTorque(3:(end-2),2));
 %Number of seconds around a large torque that will be removed
 areaRemove = [11000,25000];
 
@@ -104,12 +110,12 @@ areaRemove = [11000,25000];
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
 
-[noEarthquakes,editTorque] = removeEarthquakes(newD,calcTorque,threshold,areaRemove,showOut);
+[noEarthquakes,editTorque] = removeEarthquakes(tFnewD,calcTorque,threshold,areaRemove,showOut);
 
 omegaEarth = 2*pi*(1/86164.0916);
 oED = 2*pi*(1/86400);
 t = noEarthquakes(:,1);
-X = [ones(rows(t),1),t-t(1,1).*ones(rows(t),1),sin(oED.*t),cos(oED.*t),sin((2*pi*f0).*t),cos((2*pi*f0).*t)];
+X = [ones(rows(t),1),t-t(1,1).*ones(rows(t),1),sin(oED.*t),cos(oED.*t)];
 [bRE,sRE,rRE,errRE,covRE] = ols2(noEarthquakes(:,2),X);
 noRes = [noEarthquakes(:,1),noEarthquakes(:,2) - X*bRE];
 

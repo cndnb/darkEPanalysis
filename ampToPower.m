@@ -8,7 +8,7 @@ function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q)
 	errMod = ones(rows(freqArray),3);
 
 	%Divides by transfer function to get power(frequency)
-	ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q);
+	ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q)./twoPointTransfer(freqArray,f0);
   
 	%Return
 	FAMP = [freqArray,abs(ampMod)];

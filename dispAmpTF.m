@@ -9,8 +9,8 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
   endCount = rows(frequencies);
 
   %Creates array to collect chunk values for mean/stdev
-  valueStuff = zeros(endCount,12,rows(driftFix));
-  compVar = zeros(endCount,12,rows(driftFix));
+  valueStuff = zeros(endCount,10,rows(driftFix));
+  compVar = zeros(endCount,10,rows(driftFix));
   compOut = zeros(endCount,3,rows(driftFix));
   errOut = zeros(endCount,3,rows(driftFix));
   startCount = 1;
@@ -47,9 +47,6 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
           %Prevents linear and constant term from becoming degenerate
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
-	if (abs(frequencies(count)-f0) < 3e-5)
-	  designX = designX(:,1:10);
-	endif
 	allBETA = 0;
 	allCov = 0;
 	if (weighted)
