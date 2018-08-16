@@ -1,4 +1,4 @@
-function ret = twoPointTransfer(inFreq,f0)
+function ret = twoPointTransfer(inFreq,f0) %Update to work with discrete data
   if (nargin != 2)
     usage("tau(frequency) = twoPointTransfer(frequency,resonanceFreq)");
   endif
