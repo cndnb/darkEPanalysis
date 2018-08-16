@@ -9,7 +9,8 @@
 
 %Pendulum and balance parameters, in SI units:
 global I = 378/(1e7);                                                                    
-global f0 = 1.9338e-3;                                                                 
+global f0 = 1.9338e-3; %Fake data f0
+%global f0 = 0.0019295; %Real data f0
 global Q = 500000;                                                                     
 global Temp = 273+24;  
 global kappa = (2*pi*f0)^2 * I;
@@ -66,8 +67,9 @@ showOut = 1;
 %pkg load signal;
 
 if (!exist('d'))
-  %importfakeDarkEP
-  d = O;
+  %importrealdarkEP
+  importfakeDarkEP
+  %d = O;
   
   %Weighting
   %f = fir1(10000,0.01,'high');
@@ -77,20 +79,21 @@ if (!exist('d'))
   %d(:,3) = weightVal;
 endif
 
-newD = d(1:3*86164,:);
+%newD = [d(1:140000,:);d(146000:2*86164,:)];
+
+%newD = d(1:2*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = d(4*86164:5*86164,:);
-%newD = d;
-%newD = [d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
+newD = d;
+%newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
 %newD = [d(:,1),d(:,2)];
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
 
 tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
-  
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
