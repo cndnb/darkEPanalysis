@@ -61,6 +61,12 @@ chunkSize = 10;
 %boolean to show output on terminal
 showOut = 1;
 
+%Distance in time between samples
+sampleInterval = 1; %seconds
+
+%Frequency change on torsion filter transfer function
+fC = 0.0018411;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,8 +74,8 @@ showOut = 1;
 
 if (!exist('d'))
   %importrealdarkEP
-  importfakeDarkEP
-  %d = O;
+  %importfakeDarkEP
+  d = O;
   
   %Weighting
   %f = fir1(10000,0.01,'high');
@@ -85,8 +91,8 @@ endif
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-%newD = d(4*86164:5*86164,:);
-newD = d;
+newD = d(4*86164+25000:5*86164,:);
+%newD = d;
 %newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
 %newD = [d(:,1),d(:,2)];
@@ -189,7 +195,7 @@ pause();
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,fC);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -246,6 +252,8 @@ title('Torque vs frequency parallel to gamma');
 %! test weightedOLS
 %! disp('transferFunction');
 %! test transferFunction
+%! disp('twoPointTransfer');
+%! test twoPointTransfer
 %! disp('ampToPower');
 %! test ampToPower
 %! disp('testerFile');
