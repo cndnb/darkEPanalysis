@@ -23,12 +23,12 @@ for count = 1:rows(eqInd)
 	if (forward > rows(data))
 		forward = rows(data);
 	endif
-	noEarthquakes(back:forward,2) = Inf;
+	noEarthquakes(back:forward,2) = NaN;
 	noEarthTorque(back:forward,2) = 0;
 endfor
 
 %Removes points that were set to Inf in time series
-removeInd = find(isinf(noEarthquakes(:,2)));
+removeInd = find(isnan(noEarthquakes(:,2)));
 noEarthquakes(removeInd,:) = [];
 		
 %Returns edited arrays
@@ -41,7 +41,7 @@ endfunction
 %! t = 1:10000; t=t';
 %! fData = [t,sin((2*pi*1/100).*t)];
 %! torqueData = [t,zeros(rows(t),1)];
-%! areaRemove = 500;
+%! areaRemove = [500,500];
 %! threshold = .99;
 %! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
 %! assert(rTime,fData);
@@ -49,5 +49,5 @@ endfunction
 %! torqueData(pointEarthquake,2) = 1;
 %! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
 %! assert(rTorque,[t,zeros(rows(torqueData),1)]);
-%! cTime = fData; cTime(pointEarthquake-areaRemove:pointEarthquake+areaRemove,:) = [];
+%! cTime = fData; cTime(pointEarthquake-areaRemove(1,1):pointEarthquake+areaRemove(1,2),:) = [];
 %! assert(rTime,cTime);

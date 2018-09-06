@@ -1,6 +1,6 @@
 function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q)  
 	if(nargin != 5)
-		usage('[FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q)');
+		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q)');
 	endif
   
 	%Accumulation array

@@ -1,17 +1,19 @@
-function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,displayOut)
+function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)
 
   if (nargin != 5)
     usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,fitIsWeighted,displayOut)');
   endif
 
+  f0 = 1.9338e-3;
   numBETAVal = columns(createSineComponents(1,1));
   endCount = rows(frequencies);
 
   %Creates array to collect chunk values for mean/stdev
-  valueStuff = ones(endCount,10,rows(driftFix));
-  compVar = ones(endCount,10,rows(driftFix));
-  compOut = ones(endCount,6,rows(driftFix));
-  errOut = ones(endCount,3,rows(driftFix));
+  valueStuff = zeros(endCount,10,rows(driftFix));
+  compVar = zeros(endCount,10,rows(driftFix));
+  compOut = zeros(endCount,3,rows(driftFix));
+  errOut = zeros(endCount,3,rows(driftFix));
+
   startCount = 1;
 
   %Catches first frequency equal to zero
@@ -45,30 +47,29 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
         endif
         %designX = createSepSine(driftFix{secCount,1}(:,1),frequencies(count));
         designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
+        if (abs(f0 - frequencies(count)) < 4* eps || noRes)
+          designX = designX(:,1:numBETAVal - 2);
+          if (!noRes)
+            frequencies(count)
+            fflush(stdout);
+          endif
+        end
         if (linearColumn != 0)
           %Prevents linear and constant term from becoming degenerate
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
-        allBETA = 0;
-        allCov = 0;
-	      if (weighted)
-		      [BETA,COV] = specFreqAmp(driftFix{secCount,1}(:,1:2),designX(:,1:6),driftFix{secCount,1}(:,3));
-          allBETA = BETA;
-          allCov = diag(COV)';
-	      else
-		      [BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX(:,1:6));
-		      allBETA = BETA';
-          allCov = diag(COV)';
-	      endif
 
-	      %Adds data to each column in collection arrays
-	      valueStuff(count,1:6,secCount) = allBETA;
-	      compVar(count,1:6,secCount) = allCov;
+	[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
+
+	%Adds data to each column in collection arrays
+	valueStuff(count,1:rows(BETA),secCount) = BETA';
+	compVar(count,1:columns(COV),secCount) = diag(COV)';
        endfor
      endfor
+	
+	%Weights smaller variance more heavily
+	compVar = 1 ./ compVar;
 
-     %Weights smaller uncertainty more heavily
-     compVar = 1 ./ compVar;
 	if (rows(driftFix) > 1) %This is only used in testing
 		%Weighted average over different bin sizes
     		valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
