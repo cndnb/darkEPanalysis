@@ -7,6 +7,7 @@ function rtn = createSineComponents(timeData,f)
   f0 = 1.9338e-3;
   omegaSearch = 2*pi.*f;
   omegaEarth = 2*pi*(1/86164.0916);
+  oED = 2*pi*(1/86400);
   
   %Creates 3-D array, 3rd dimension is the search frequency. Dim 1 and 2
   %is the design matrix for each frequency.
@@ -34,18 +35,18 @@ function rtn = createSineComponents(timeData,f)
   %dPaX(:,2) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
 
   %Resonant frequency component
-  %X(:,7) = sin((2*pi*f0).*timeData);
-  %X(:,8) = cos((2*pi*f0).*timeData);
+  X(:,7) = sin((2*pi*f0).*timeData);
+  X(:,8) = cos((2*pi*f0).*timeData);
   
   %Daily mondulation component
-  %X(:,9) = sin(omegaEarth.*timeData);
-  %X(:,10) = cos(omegaEarth.*timeData);
+  X(:,7) = sin(oED.*timeData);
+  X(:,8) = cos(oED.*timeData);
   
   %Drift component
-  %X(:,9) = timeData;
+  X(:,9) = timeData;
   
   %Constant offset component
-  %X(:,3) = ones(rows(timeData),1);
+  X(:,10) = ones(rows(timeData),1);
 
   rtn = X;
 endfunction

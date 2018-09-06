@@ -15,8 +15,8 @@ for count = 1:rows(eqInd)
 		count
 		fflush(stdout);
 	endif
-	back = eqInd(count) - areaRemove;
-	forward = eqInd(count) + areaRemove;
+	back = eqInd(count) - areaRemove(1,1);
+	forward = eqInd(count) + areaRemove(1,2);
 	if (back < 1)
 		back = 1;
 	endif
