@@ -1,15 +1,18 @@
-function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,fC) 
+function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered)  
 	if(nargin != 7)
-		usage('[FAMP,FERR] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval)');
+		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered)');
 	endif
   
 	%Accumulation array
-	ampMod = ones(rows(freqArray),3); %1-Z, 2-PerpGamma 3-ParaGamma
-	errMod = ones(rows(freqArray),3);
+	ampMod = ones(rows(freqArray),6); %1-Z, 2-PerpGamma 3-ParaGamma 4-EarthModulaton 5-drift 6-Constant offset
+	errMod = ones(rows(freqArray),6);
 
 	%Divides by transfer function to get power(frequency)
-	ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q)./twoPointTransfer(freqArray,f0,sampleInterval);
-	%ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q)./testTwoPt(freqArray,f0,sampleInterval,fC);
+	if(torsionFiltered)
+		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q)./twoPointTransfer(freqArray,f0,sampleInterval);
+	else
+		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q);
+	endif
   
 	%Return
 	FAMP = [freqArray,abs(ampMod)];

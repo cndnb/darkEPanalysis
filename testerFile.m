@@ -1,3 +1,5 @@
+pkg load signal;
+
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -9,8 +11,8 @@
 
 %Pendulum and balance parameters, in SI units:
 global I = 378/(1e7);                                                                    
-global f0 = 1.9338e-3; %Fake data f0
-%global f0 = 0.0019295; %Real data f0
+%global f0 = 1.9338e-3; %Fake data f0
+global f0 = 0.0019295; %Real data f0
 global Q = 500000;                                                                     
 global Temp = 273+24;  
 global kappa = (2*pi*f0)^2 * I;
@@ -47,10 +49,6 @@ startFreq = 1e-3;
 %End frequency scan
 stopFreq = 1e-2;
 
-%%If weighted - OBSOLETE
-%%1 for weightedOLS, 0 for ols2
-%fitIsWeighted = 0;
-
 %Number of days in the data considered
 daysInclude = 0;
 
@@ -63,6 +61,9 @@ showOut = 1;
 %Distance in time between samples
 sampleInterval = 1; %seconds
 
+%Boolean to use torsion filter
+torsionFiltered = 0;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %pkg load signal;
@@ -71,22 +72,23 @@ if (!exist('d'))
   %importrealdarkEP
   %importfakeDarkEP
   d = O;
-  
-  %Weighting
-  %f = fir1(10000,0.01,'high');
-  %F = filter(f,1,d(:,2));
-  %weightVal = abs(F - mean(F)) + 1e-9;
-  %weightVal = resonanceVariance(d,chunkSize);
-  %d(:,3) = weightVal;
 endif
+
 
 %newD = [d(1:140000,:);d(146000:2*86164,:)];
 
-newD = d(1*86164:3*86164,:);
+%newD = [d(1:100000,:);d(2*86164:4*86164,:)];
+
+newD = d(1:4*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = d(4*86164+25000:5*86164,:);
+%newD = d(1:2*86164,:);
+
+%newD = d(1:6*86164-20000,:); 
+%newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
+%newD = d(1:5*86164,:);
 %newD = d;
 %newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
@@ -94,19 +96,18 @@ newD = d(1*86164:3*86164,:);
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
 
-%tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%Calculates the torque at each point, puts into an array for analysis
-calcTorque = torque(newD, I, kappa);
 
 %number of seconds in a bin
 dayLength = 86164; %seconds
+
 %This is the value above which torque is considered an earthquake
-threshold = 1e-12 + mean(calcTorque(3:(end-2),2));
-%threshold = 1e-13 + mean(calcTorque(3:(end-2),2));
+baseThreshold = 2e-12;
+gDamperThreshold = 1e-15; 
+
 %Number of seconds around a large torque that will be removed
-areaRemove = [11000,25000];
+areaRemove = [5000,12000];
+
 
 %returns torques set to zero at earthquakes in a matrix, 
 %driftFix = data divided into days and earthquake points removed
@@ -114,7 +115,30 @@ areaRemove = [11000,25000];
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
 
-[noEarthquakes,editTorque] = removeEarthquakes(newD,calcTorque,threshold,areaRemove,showOut);
+noEarthquakes = 0; editTorque = 0; torqueCell = cell(2,2);
+%Calculates the torque at each point, puts into an array for analysis
+if(torsionFiltered)
+	tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
+	f = fir1(10000,[0.001,0.01],'pass');
+	filterD = filter(f,1,tFnewD(:,2)-mean(tFnewD(:,2)));
+	filterD = [tFnewD(:,1),filterD];
+	filterT = torque(filterD,I,kappa);
+	calcTorque = torque(tFnewD, I, kappa);
+	threshold = baseThreshold + mean(calcTorque(3:(end-2),2));
+	torqueCell{1,1} = calcTorque; torqueCell{1,2} = threshold;
+	torqueCell{2,1} = filterT; torqueCell{2,2} = gDamperThreshold;
+	[noEarthquakes,editTorque] = removeEarthquakes(tFnewD,torqueCell,areaRemove,showOut);
+else
+	f = fir1(10000,[0.001,0.01],'pass');
+	filterD = filter(f,1,newD(:,2)-mean(newD(:,2)));
+	filterD = [newD(:,1),filterD];
+	filterT = torque(filterD,I,kappa);
+	calcTorque  = torque(newD,   I, kappa);
+	threshold = baseThreshold + mean(calcTorque(3:(end-2),2));
+	torqueCell{1,1} = calcTorque; torqueCell{1,2} = threshold;
+	torqueCell{2,1} = filterT; torqueCell{2,2} = gDamperThreshold;
+	[noEarthquakes,editTorque] = removeEarthquakes(  newD,torqueCell,areaRemove,showOut);
+endif
 
 omegaEarth = 2*pi*(1/86164.0916);
 oED = 2*pi*(1/86400);
@@ -123,21 +147,26 @@ X = [ones(rows(t),1),t-t(1,1).*ones(rows(t),1),sin(oED.*t),cos(oED.*t)];
 [bRE,sRE,rRE,errRE,covRE] = ols2(noEarthquakes(:,2),X);
 noRes = [noEarthquakes(:,1),noEarthquakes(:,2) - X*bRE];
 
-
-
-driftFix = dayDivision(noEarthquakes,daysInclude,dayLength,showOut);
+driftFix  = dayDivision(noEarthquakes, daysInclude,dayLength,showOut);
 
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
 
 figure(6);
-plot(calcTorque(3:(end - 2),1),calcTorque(3:(end - 2),2),calcTorque(3:(end - 2),1),...
-threshold.*ones(rows(calcTorque)-4,1),editTorque(:,1),editTorque(:,2));
+plot(torqueCell{1,1}(3:(end - 2),1),torqueCell{1,1}(3:(end - 2),2),torqueCell{1,1}(3:(end - 2),1),...
+torqueCell{1,2}.*ones(rows(torqueCell{1,1})-4,1));
 title('Threshold plotted on torque');
 xlabel('Time (s)');
 ylabel('Torque (N m)');
 
 figure(7);
+plot(torqueCell{2,1}(3:(end - 2),1),torqueCell{2,1}(3:(end - 2),2),torqueCell{2,1}(3:(end - 2),1),...
+torqueCell{2,2}.*ones(rows(torqueCell{2,1})-4,1));
+title('Threshold plotted on torque');
+xlabel('Time (s)');
+ylabel('Torque (N m)');
+
+figure(8);
 plot(noRes(:,1),noRes(:,2));
 title('drift, earthRotation, and resonance removed');
 xlabel('Time (s)');
@@ -184,13 +213,13 @@ rows(freqArray)
 fflush(stdout);
 pause();
 
-[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,showOut);
+[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,torsionFiltered,showOut);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,fC);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
