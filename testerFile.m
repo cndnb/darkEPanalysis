@@ -40,17 +40,16 @@ global kappa = (2*pi*f0)^2 * I;
 %Number of design matrix columns
 numBETAVal = columns(createSineComponents(1,1));
 %Linear terms need constant subtracted off, need to know which column this will
-%be performed on--in this analysis, it is second to last.
-linearColumn = numBETAVal - 1;
+linearColumn = numBETAVal - 3;
 
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
 stopFreq = 1e-2;
 
-%If weighted
-%1 for weightedOLS, 0 for ols2
-fitIsWeighted = 0;
+%%If weighted - OBSOLETE
+%%1 for weightedOLS, 0 for ols2
+%fitIsWeighted = 0;
 
 %Number of days in the data considered
 daysInclude = 0;
@@ -63,10 +62,6 @@ showOut = 1;
 
 %Distance in time between samples
 sampleInterval = 1; %seconds
-
-%Frequency change on torsion filter transfer function
-fC = 0.0018411;
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,11 +82,11 @@ endif
 
 %newD = [d(1:140000,:);d(146000:2*86164,:)];
 
-%newD = d(1:2*86164,:);
+newD = d(1*86164:3*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-newD = d(4*86164+25000:5*86164,:);
+%newD = d(4*86164+25000:5*86164,:);
 %newD = d;
 %newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
@@ -99,11 +94,11 @@ newD = d(4*86164+25000:5*86164,:);
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
 
-tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
+%tFnewD = torsionFilter(newD(:,1),newD(:,2),1/f0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Calculates the torque at each point, puts into an array for analysis
-calcTorque = torque(tFnewD, I, kappa);
+calcTorque = torque(newD, I, kappa);
 
 %number of seconds in a bin
 dayLength = 86164; %seconds
@@ -119,7 +114,7 @@ areaRemove = [11000,25000];
 %Full length is length of the data in seconds from start to stop, before
 %earthquake removal
 
-[noEarthquakes,editTorque] = removeEarthquakes(tFnewD,calcTorque,threshold,areaRemove,showOut);
+[noEarthquakes,editTorque] = removeEarthquakes(newD,calcTorque,threshold,areaRemove,showOut);
 
 omegaEarth = 2*pi*(1/86164.0916);
 oED = 2*pi*(1/86400);
@@ -189,7 +184,7 @@ rows(freqArray)
 fflush(stdout);
 pause();
 
-[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,fitIsWeighted,showOut);
+[compAvg,compOut] = dispAmpTF(driftFix,freqArray,linearColumn,showOut);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

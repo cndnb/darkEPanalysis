@@ -6,12 +6,11 @@ function ret = twoPointTransfer(inFreq,f0,Interval) %Update to work with discret
 		error("transferFunction can only take a frequency column vector");
 	endif
 	T0 = 1 / f0;
-	fT0 = floor(T0/Interval); %Unitless floor function => floor(T0) = Interval*(fT0), ceil(T0) = Interval*(fT0 + 1)
-	hPT0 = floor(T0/(4*Interval));
-	weight = 1 - ((T0/(4*Interval)) - hPT0); %1 - distance from actual value to floor, weight = 1 when T0 = fT0
+	fT0 = floor(T0/(4*Interval)); %Unitless floor function => floor(T0) = Interval*(fT0), ceil(T0) = Interval*(fT0 + 1)
+	weight = (T0/(4*Interval)) - fT0; %1 - distance from actual value to floor, weight = 1 when T0 = fT0
 
 
-	ret = weight.*cos((pi/2)*Interval*fT0.*inFreq) + (1 - weight).*cos((pi/2)*Interval*(fT0 + 1).*inFreq);
+	ret = (1-weight).*cos((2*pi)*Interval*fT0.*inFreq) + weight.*cos((2*pi)*Interval*(fT0 + 1).*inFreq);
 endfunction
 
 %!test

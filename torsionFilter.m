@@ -6,7 +6,9 @@
 % Timing preserves the original sample cadence and phase.
 
 function outData = torsionFilter(time, data, period)
-
+if(nargin != 3)
+	error('outData = torsionFilter(time,data,period)');
+endif
 %	outData = [];
 
 %	for ctr = 1:rows(time)

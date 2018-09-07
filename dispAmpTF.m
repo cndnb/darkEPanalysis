@@ -1,16 +1,16 @@
-function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,displayOut)
+function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,displayOut)
 
-  if (nargin != 5)
-    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,fitIsWeighted,displayOut)');
+  if (nargin != 4)
+    usage('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,displayOut)');
   endif
-
+  
   f0 = 1.9338e-3;
   numBETAVal = columns(createSineComponents(1,1));
   endCount = rows(frequencies);
 
   %Creates array to collect chunk values for mean/stdev
-  valueStuff = zeros(endCount,10,rows(driftFix));
-  compVar = zeros(endCount,10,rows(driftFix));
+  valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
+  compVar = zeros(endCount,numBETAVal,rows(driftFix));
   compOut = zeros(endCount,3,rows(driftFix));
   errOut = zeros(endCount,3,rows(driftFix));
   startCount = 1;
@@ -42,29 +42,24 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,weighted,di
           count
           fflush(stdout);
         endif
-        designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
+	designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
+	noResonance = designX(1:10,:);
+	if (abs(frequencies(count) - f0) < 4*eps) 
+		designX = noResonance;
+	endif
+
         if (linearColumn != 0)
           %Prevents linear and constant term from becoming degenerate
           designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         endif
-	allBETA = 0;
-	allCov = 0;
-	if (weighted)
-		[BETA,COV] = specFreqAmp(driftFix{secCount,1}(:,1:2),designX,driftFix{secCount,1}(:,3));
-		allBETA = BETA;
-		allCov = diag(COV)';
-	else
-		[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
-		allBETA = BETA';
-		allCov = diag(COV)';
-	endif
+
+	[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
 
 	%Adds data to each column in collection arrays
-	valueStuff(count,1:columns(allBETA),secCount) = allBETA;
-	compVar(count,1:columns(allCov),secCount) = allCov;
+	valueStuff(count,1:rows(BETA),secCount) = BETA';
+	compVar(count,1:columns(COV),secCount) = diag(COV)';
        endfor
      endfor
-	
 	%Weights smaller variance more heavily
 	compVar = 1 ./ compVar;
 	if (rows(driftFix) > 1) %This is only used in testing
