@@ -47,7 +47,7 @@ function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displ
         endif
         %designX = createSepSine(driftFix{secCount,1}(:,1),frequencies(count));
         designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
-        if (abs(f0 - frequencies(count)) < 4* eps || noRes)
+        if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) || noRes)
           designX = designX(:,1:numBETAVal - 2);
           if (!noRes)
             frequencies(count)

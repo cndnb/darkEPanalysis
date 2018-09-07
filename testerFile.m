@@ -73,11 +73,11 @@ endif
 
 %newD = [d(1:140000,:);d(146000:2*86164,:)];
 
-%newD = d(1:2*86164,:);
+newD = d(1:2*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-newD = d(4*86164+25000:5*86164,:);
+%newD = d(1:5*86164,:);
 %newD = d;
 %newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
 %newD = blah;
@@ -226,13 +226,13 @@ pause();
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
 [FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q);
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg2./twoPointTransfer(freqArray2,f0,1),freqArray,kappa,f0,Q);
+[FINALAMP2, FINALERR2,FINALPHASE2] = ampToPower(compAvg2./twoPointTransfer(freqArray2,f0,1),freqArray2,kappa,f0,Q);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plots torque power as a function of frequency
 figure(1);
-loglog(FINALAMP(:,1),FINALAMP(:,2));
+loglog(FINALAMP(:,1),FINALAMP(:,2),FINALAMP2(:,1),FINALAMP2(:,2));
 %%hold on;
 %%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,2) - FINALERR(:,2),FINALAMP(:,2) + FINALERR(:,2)],'-r');
 %%hold off;
@@ -241,7 +241,7 @@ ylabel('Torque (N m)');
 title('Torque vs frequency parallel to Z');
 
 figure(2);
-loglog(FINALAMP(:,1),FINALAMP(:,3));
+loglog(FINALAMP(:,1),FINALAMP(:,3),FINALAMP2(:,1),FINALAMP2(:,3));
 %%hold on;
 %%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,3) - FINALERR(:,3),FINALAMP(:,3) + FINALERR(:,3)],'-r');
 %%hold off;
@@ -250,7 +250,7 @@ ylabel('Torque (N m)');
 title('Torque vs frequency perpendicular to gamma');
 
 figure(3);
-loglog(FINALAMP(:,1),FINALAMP(:,4));
+loglog(FINALAMP(:,1),FINALAMP(:,4),FINALAMP2(:,1),FINALAMP2(:,4));
 %%hold on;
 %%loglog([FINALAMP(:,1),FINALAMP(:,1)],[FINALAMP(:,4) - FINALERR(:,4),FINALAMP(:,4) + FINALERR(:,4)],'-r');
 %%hold off;
