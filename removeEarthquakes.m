@@ -1,33 +1,39 @@
-function [theta,tau] = removeEarthquakes(data,torque,areaRemove,showOut) %FIX NEEDED IGNORES SECOND TORQUE INPUT
-if (nargin != 4)
-  error('[theta,tau] = removeEarthquakes(data,torque,areaRemove,showOut)');
+function [theta,tau] = removeEarthquakes(data,torque,externalRemove,areaRemove,showOut)
+if (nargin != 5)
+  error('[theta,tau] = removeEarthquakes(data,torque,externalRemove,areaRemove,showOut)');
 endif
 
 noEarthTorque = torque{1,1};
 noEarthquakes = data;
 
-for tMat = 1:rows(torque)
-	subThresh = torque{tMat,1}(:,2) .- torque{tMat,2}.*ones(rows(torque{tMat,1}),1);
-	onlyPositive = subThresh./(-abs(subThresh)) - 1;
-	eqInd = find(onlyPositive);
+subThresh = torque{1,1}(:,2) .- torque{1,2}.*ones(rows(torque{1,1}),1);
+onlyPositive = subThresh./(-abs(subThresh)) - 1;
 
-	for count = 1:rows(eqInd)	
-		if (showOut)
-			count
-			fflush(stdout);
-		endif
-		back = eqInd(count) - areaRemove(1,1);
-		forward = eqInd(count) + areaRemove(1,2);
-		if (back < 1)
-			back = 1;
-		endif
-		if (forward > rows(data))
-			forward = rows(data);
-		endif
-		noEarthquakes(back:forward,2) = NaN;
-		noEarthTorque(back:forward,2) = 0;
-	endfor
+%Indexes to be removed from earthquakes
+indRemT = find(onlyPositive);
+%Indexes to be removed from external triggers
+indRemX = find(externalRemove);
+
+%All indexes to be removed in order
+eqInd = sort([indRemT;indRemX]);
+
+for count = 1:rows(eqInd)	
+	if (showOut)
+		count
+		fflush(stdout);
+	endif
+	back = eqInd(count) - areaRemove(1,1);
+	forward = eqInd(count) + areaRemove(1,2);
+	if (back < 1)
+		back = 1;
+	endif
+	if (forward > rows(data))
+		forward = rows(data);
+	endif
+	noEarthquakes(back:forward,2) = NaN;
+	noEarthTorque(back:forward,2) = 0;
 endfor
+
 
 %Removes points that were set to Inf in time series
 removeInd = find(isnan(noEarthquakes(:,2)));

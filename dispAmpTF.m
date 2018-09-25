@@ -1,89 +1,94 @@
-function [rtn,compOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)
-
-  if (nargin != 5)
-    error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)');
-  endif
+function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)
+	if (nargin != 5)
+		error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)');
+	endif
   
-  f0 = 1.9338e-3;
-  numBETAVal = columns(createSineComponents(1,1));
-  endCount = rows(frequencies);
+	f0 = 1.9338e-3;
+	numBETAVal = columns(createSineComponents(1,1));
+	endCount = rows(frequencies);
 
-  %Creates array to collect chunk values for mean/stdev
-  valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
-  compVar = zeros(endCount,numBETAVal,rows(driftFix));
-  compOut = zeros(endCount,3,rows(driftFix));
-  errOut = zeros(endCount,3,rows(driftFix));
+	%Creates array to collect chunk values for mean/stdev
+	valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
+	compVar = zeros(endCount,numBETAVal,rows(driftFix));
+	compOut = zeros(endCount,3,rows(driftFix));
+	errOut = zeros(endCount,3,rows(driftFix));
+	ampError = zeros(endCount,numBETAVal,rows(driftFix));  
 
-  startCount = 1;
+	startCount = 1;
 
-  %Catches first frequency equal to zero
-  if(frequencies(1) == 0)
-	for count = 1:rows(driftFix)
-		valueStuff(1,:,count) = [0,mean(driftFix{count,1}(:,2)),0,0,0,0];
-	endfor
-	startCount = 2;
-  endif
-  if(frequencies(end) == .5)
-	for count = 1:rows(driftFix)
-		designX = sin(pi*driftFix{count,1}(:,1));
-		[altB,altS,altERR,altR,altCOV] = ols2(driftFix{count,1}(:,2),designX);
-		valueStuff(end,:,count) = [altB,0,0,0,0,0];
-	endfor
-	endCount = endCount - 1;
-  endif
+	%Catches first frequency equal to zero
+	if(frequencies(1) == 0)
+		for count = 1:rows(driftFix)
+			valueStuff(1,:,count) = [0,mean(driftFix{count,1}(:,2)),0,0,0,0];
+		endfor
+		startCount = 2;
+  	endif
+  	if(frequencies(end) == .5)
+		for count = 1:rows(driftFix)
+			designX = sin(pi*driftFix{count,1}(:,1));
+			[altB,altS,altERR,altR,altCOV] = ols2(driftFix{count,1}(:,2),designX);
+			valueStuff(end,:,count) = [altB,0,0,0,0,0];
+		endfor
+		endCount = endCount - 1;
+  	endif
 		
-  if (displayOut)
-    endCount
-  endif
-  %Runs the fitter over each bin to find the amplitude at each frequency
-    for secCount = 1:rows(driftFix)
-      if (displayOut)
-        secCount
-      endif
-      for count = startCount:endCount
-        if (displayOut)
-          count
-          fflush(stdout);
-        endif
-        designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
-        if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) || noRes)
-          designX = designX(:,1:numBETAVal - 2);
-          if (!noRes)
-            frequencies(count)
-            fflush(stdout);
-          endif
-        end
-        if (linearColumn != 0)
-          %Prevents linear and constant term from becoming degenerate
-          designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
-        endif
+	if (displayOut)
+		endCount
+	endif
+	%Runs the fitter over each bin to find the amplitude at each frequency
+	for secCount = 1:rows(driftFix)
+		if (displayOut)
+			secCount
+		endif
+		for count = startCount:endCount
+			if (displayOut)
+				count
+				fflush(stdout);
+			endif
+			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
+			if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) || noRes)
+				designX = designX(:,1:numBETAVal - 2);
+				if (!noRes)
+					frequencies(count)
+            				fflush(stdout);
+          			endif
+        		endif
+        		if (linearColumn != 0)
+          			%Prevents linear and constant term from becoming degenerate
+          			designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
+        		endif
 
-	[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
+			[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
 
-	%Adds data to each column in collection arrays
-	valueStuff(count,1:rows(BETA),secCount) = BETA';
-	compVar(count,1:columns(COV),secCount) = diag(COV)';
-       endfor
-     endfor
+			%Adds data to each column in collection arrays
+			valueStuff(count,1:rows(BETA),secCount) = BETA';
+			compVar(count,1:columns(COV),secCount) = diag(COV)';
+       		endfor
+     	endfor
 	%Weights smaller variance more heavily
 	compVar = 1 ./ compVar;
-
-	if (rows(driftFix) > 1) %This is only used in testing
+	
+	%Performs weighted average using variances of OLS fit
+	if (rows(driftFix) > 1)
 		%Weighted average over different bin sizes
     		valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
-    		%Sums (x-mean(x))^2 and then divides by N-1 takes the sqrt
-    		ampError = std(valueStuff,0,3); %0 makes std use denominator N-1
-	else
+    		%Takes stdev of central values to more accurately represent real error
+		ampError = std(valueStuff,0,3);
+    		%ampError = 1 ./ sqrt(sum(compVar,3)); %Weighted average error
+	else %If only one bin
     		valAvg = valueStuff;
     		ampError = zeros(rows(compOut),columns(compOut));
   	endif
-  	compOut = [valueStuff(:,2,:)+ i.*valueStuff(:,1,:),valueStuff(:,4,:)+i.*valueStuff(:,3,:),valueStuff(:,6,:)+i.*valueStuff(:,5,:),...
-    valueStuff(:,8,:) + i.*valueStuff(:,7,:),valueStuff(:,9,:),valueStuff(:,10,:)];
-  	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),...
-    valAvg(:,8) + i.*valAvg(:,7),valAvg(:,9),valAvg(:,10)];
-  	
+	
+	%Adds weighted average values to be in complex amplitude format
+  	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,8) + i.*valAvg(:,7),valAvg(:,9),valAvg(:,10)];
+	
+	%Adds errors on real/imaginary components to find error of modulus
+	modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2) + (valAvg(:,1).^2).*(ampError(:,1).^2)));
+ 
 	%Returns
-  	rtn = compAvg;
+  	ampOut = compAvg;
+	errOut = modErr;
 
 endfunction
 

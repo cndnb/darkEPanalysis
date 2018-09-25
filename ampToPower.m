@@ -1,5 +1,5 @@
-function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered)  
-	if(nargin != 7)
+function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal)  
+	if(nargin != 8)
 		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered)');
 	endif
   
@@ -9,9 +9,9 @@ function [FAMP,FERR,FPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInte
 
 	%Divides by transfer function to get power(frequency)
 	if(torsionFiltered)
-		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q)./twoPointTransfer(freqArray,f0,sampleInterval);
+		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal)./twoPointTransfer(freqArray,f0,sampleInterval);
 	else
-		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q);
+		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal);
 	endif
   
 	%Return
@@ -36,6 +36,6 @@ endfunction
 %! tErr = abs(sqrt(((3^2)/(3^2+4^2))*(3^2)+((4^2)/(3^2+4^2))*(4^2))/transferFunction(freq,kappa,f0,Q)); %Expected (comparison) value of FERR from test matrix
 %! compAmp = [freq,tAmp,tAmp,tAmp];
 %! compErr = [freq,tErr,tErr,tErr];
-%! [outAmp,outErr] = ampToPower(testMatrix,freq,kappa,f0,Q); %Actual function output of FAMP/FERR
+%! [outAmp,outErr] = ampToPower(testMatrix,freq,kappa,f0,Q,1,0,1); %Actual function output of FAMP/FERR
 %! assert(compAmp,outAmp)
 %! %assert(compErr == outErr)
