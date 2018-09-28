@@ -71,9 +71,10 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 	%Performs weighted average using variances of OLS fit
 	if (rows(driftFix) > 1)
 		%Weighted average over different bin sizes
-    		valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
+    		valAvg = mean(valueStuff,3);
+		%valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
     		%Takes stdev of central values to more accurately represent real error
-		ampError = std(valueStuff,0,3);
+		ampError = std(valueStuff,0,3)./size(valueStuff,3);
     		%ampError = 1 ./ sqrt(sum(compVar,3)); %Weighted average error
 	else %If only one bin
     		valAvg = valueStuff;
