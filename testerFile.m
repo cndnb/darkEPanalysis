@@ -101,7 +101,8 @@ endif
 
 %newD = [d(1:100000,:);d(2*86164:4*86164,:)];
 
-newD = [d(2*86164:5*86164,:);d(6*86164:7*86164,:);d(9*86164:12*86164,:)];
+%newD = [d(2*86164:5*86164,:);d(6*86164:7*86164,:);d(9*86164:12*86164,:)];
+newD = d(2*86164:4*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
@@ -268,6 +269,14 @@ title('Torque vs frequency parallel to gamma');
 %ylabel('Torque (N m)');
 %title('Torque vs frequency');
 
+
+gZ = torqueToGBL(FINALAMP(:,2));
+gLim = torqueToGBL(thNoise);
+figure(5);
+loglog(FINALAMP(:,1),[gZ,gLim]);
+legend('amplitude','thermal limit');
+xlabel('Frequency (Hz)');
+ylabel('g_{B-L}');
 
 %!test
 %! disp('removeEarthquakes');
