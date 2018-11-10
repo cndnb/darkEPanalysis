@@ -1,5 +1,4 @@
 pkg load signal;
-
 %%%%%%%%%%%%%%%%%%%% PROBLEM LAYOUT & CONSTANTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Damped oscillator differential equation: x'' + (2wZ) x' + (w^2) x = 0
@@ -25,9 +24,9 @@ global oED = 2*pi*(1/86400);
 
 %Specific pendulum position data
 %%Latitude, longitude, and compass direction to be input as decimal degrees
-%global seattleLat = 47.6593743;
-%global seattleLong = -122.30262920000001;
-%global compassDir = 90;
+seattleLat = 47.6593743;
+seattleLong = -122.30262920000001;
+compassDir = 30;
 %global dipoleMag = 1;
 %
 %%Defining the X vector at January 1st 2000 00:00 UTC
@@ -35,23 +34,26 @@ global oED = 2*pi*(1/86400);
 %%At the time Mar 20 2000 07:35 UT
 %%80*24*3600 + 7*3600 + 35*60 = 6939300 seconds since January 1, 2000 00:00:00 UTC
 %%At the vernal equinox, longitude is equal to zero, so z=0;
-%global vernalEqLat = 68.1166667;
+global vernalEqLong = 68.1166667;
 %
 %%Prepares seattleLat in terms of equatorial cordinates at January 1, 2000 00:00:00 UTC
 %%This is the angle of seattleLat from the X vector
-%seattleLat = rad2deg(deg2rad(seattleLat + vernalEqLat)-omegaEarth*6939300);
+seattleLong = (180/pi)*((pi/180)*(seattleLong + vernalEqLong)-omegaEarth*6939300);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%Time that the data starts from relative to January 1st 2000 at 00:00 UTC
+startTime = 0;
+
 %Number of design matrix columns
-numBETAVal = columns(createSineComponents(1,1));
+numBETAVal = columns(createSineComponents(1,1,seattleLat,seattleLong,compassDir,startTime));
 %Linear terms need constant subtracted off, need to know which column this will
 linearColumn = numBETAVal - 3;
 
 %Start of frequency scan
-startFreq = 1e-3;
+startFreq = 1e-4;
 %End frequency scan
-stopFreq = 1e-2;
+stopFreq = 5e-4;
 
 %Number of days in the data considered
 daysInclude = 0;
@@ -66,7 +68,7 @@ showOut = 1;
 sampleInterval = 1; %seconds
 
 %Boolean to use torsion filter
-torsionFiltered = 0;
+torsionFiltered = 1;
 
 %Boolean for type of damping
 isExternal = 0;
@@ -77,13 +79,13 @@ aCN = 1e-9;
 %% Earthquake removal parameters %%
 
 %number of seconds in a bin
-dayLength = 86164; %seconds
+dayLength = 2*86164; %seconds
 
 %This is the value above which torque is considered an earthquake
 baseThreshold = 2e-12;
 
 %Number of seconds around a large torque that will be removed
-areaRemove = [5000,12000];
+areaRemove = [10000,20000];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORT DATA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,18 +93,20 @@ areaRemove = [5000,12000];
 %pkg load signal;
 
 if (!exist('d'))
+	disp('importing data');
+	fflush(stdout);
   importrealdarkEP
   %importfakeDarkEP
   %d = O;
 endif
 
-
+newD = d;
 %newD = [d(1:140000,:);d(146000:2*86164,:)];
 
 %newD = [d(1:100000,:);d(2*86164:4*86164,:)];
 
-%newD = [d(2*86164:5*86164,:);d(6*86164:7*86164,:);d(9*86164:12*86164,:)];
-newD = d(2*86164:4*86164,:);
+%newD = [d(2*86164:6*86164,:)];
+%newD = d(2*86164:4*86164,:);
 
 %newD = d(1:6*86164-20000,:); 
 %newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
@@ -118,6 +122,7 @@ newD = d(2*86164:4*86164,:);
 %newD = [d(:,1),d(:,2)];
 %newD = [d(195000:235000,:);d(370000:410000,:)];
 %newD = d(370000:410000,:);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -145,7 +150,18 @@ endif
 %Divides data into day length chunks
 driftFix  = dayDivision(noEarthquakes, daysInclude,dayLength,showOut);
 
+removed = 0;
+count = rows(driftFix);
+while(count > 0)
+	if(rows(driftFix{count,1}) < 86164)
+		driftFix(count,:) = [];
+		removed = removed + 1;
+	endif
+	count = count - 1;
+endwhile
+
 %Checks the total length of the data
+removed
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
 
@@ -207,7 +223,7 @@ for count = 1:rows(freqArray)
   if (abs(tempEnd(count)) < pastMinEnd)
     pastMinEnd = abs(tempEnd(count));
     minIndEnd = count;
-  endif
+ endif
 endfor
 indStart = minIndStart;
 indEnd = minIndEnd;
@@ -219,7 +235,7 @@ rows(freqArray)
 fflush(stdout);
 pause();
 
-[compAvg,modErr] = dispAmpTF(driftFix,freqArray,linearColumn,torsionFiltered,showOut);
+[compAvg,modErr] = dispAmpTF(driftFix,freqArray,linearColumn,torsionFiltered,showOut,seattleLat,seattleLong,compassDir,startTime);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -227,9 +243,16 @@ pause();
 %Divides by the transfer function to find the torque amplitude for each frequency
 [FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal);
 
+%Thermal noise limit calculation for torque and g_{B-L}
+thNoise = thermalNoise(FINALAMP(:,1),kappa,Q,Temp,f0,aCN,rows(checkLength),isExternal);
+gLim = torqueToGBL(thNoise);
+
+fileName = ['run0160',ctime(time)([5:7,9:10,21:end-1]),'(',num2str(startFreq),'-',num2str(stopFreq),')'];
+save(fileName,'FINALAMP','FINALERR','gLim');
+disp(['Saved run to file ',fileName]);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-thNoise = thermalNoise(FINALAMP(:,1),kappa,Q,Temp,f0,aCN,rows(checkLength),isExternal);
 
 %Plots torque power as a function of frequency
 figure(1);
@@ -269,14 +292,6 @@ title('Torque vs frequency parallel to gamma');
 %ylabel('Torque (N m)');
 %title('Torque vs frequency');
 
-
-gZ = torqueToGBL(FINALAMP(:,2));
-gLim = torqueToGBL(thNoise);
-figure(5);
-loglog(FINALAMP(:,1),[gZ,gLim]);
-legend('amplitude','thermal limit');
-xlabel('Frequency (Hz)');
-ylabel('g_{B-L}');
 
 %!test
 %! disp('removeEarthquakes');

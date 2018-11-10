@@ -1,6 +1,6 @@
-function rtn = createSineComponents(timeData,f)
-  if (nargin != 2)
-    usage ("X = createSineComponents(t,f)");
+function rtn = createSineComponents(timeData,f,seattleLat,seattleLong,compassDir,startTime)
+  if (nargin != 6)
+    error("X = createSineComponents(t,f,seattleLat,seattleLong,compassDir,startTime)");
   endif
   
 
@@ -14,23 +14,23 @@ function rtn = createSineComponents(timeData,f)
   %dZ = ones(length(timeData),2);
   %dPeX = ones(length(timeData),2);
   %dPaX = ones(length(timeData),2);
-  X = ones(rows(timeData),6);  
+  X = ones(rows(timeData),12);  
   
   %Z component
-  X(:,1)= sin(omegaSearch.*timeData);
-  X(:,2)= cos(omegaSearch.*timeData);
+  X(:,1)= sin(omegaSearch.*timeData)*cos(seattleLat)*cos(compassDir);
+  X(:,2)= cos(omegaSearch.*timeData)*cos(seattleLat)*cos(compassDir);
   %dZ(:,1) = sin(omegaSearch.*timeData);
   %dZ(:,2) = cos(omegaSearch.*timeData);
 
   %Perpendicular to X
-  X(:,3) = sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
-  X(:,4) = cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
+  X(:,3) = sin(omegaSearch.*timeData).*(-cos(omegaEarth.*timeData+seattleLong+omegaEarth*startTime)*sin(compassDir)-sin(seattleLat)*cos(compassDir)*sin(omegaEarth.*timeData+seattleLong+omegaEarth*startTime));
+  X(:,4) = cos(omegaSearch.*timeData).*(-cos(omegaEarth.*timeData+seattleLong+omegaEarth*startTime)*sin(compassDir)-sin(seattleLat)*cos(compassDir)*sin(omegaEarth.*timeData+seattleLong+omegaEarth*startTime));
   %dPeX(:,1) = sin(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   %dPeX(:,2) = cos(omegaSearch.*timeData).*sin(omegaEarth.*timeData);
   
   %Parallel to X
-  X(:,5) = sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
-  X(:,6) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
+  X(:,5) = sin(omegaSearch.*timeData).*(sin(omegaEarth.*timeData+seattleLong+omegaEarth*startTime)*sin(compassDir)-sin(seattleLat)*cos(compassDir)*cos(omegaEarth.*timeData+seattleLong+omegaEarth*startTime));
+  X(:,6) = cos(omegaSearch.*timeData).*(sin(omegaEarth.*timeData+seattleLong+omegaEarth*startTime)*sin(compassDir)-sin(seattleLat)*cos(compassDir)*cos(omegaEarth.*timeData+seattleLong+omegaEarth*startTime));
   %dPaX(:,1) = sin(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   %dPaX(:,2) = cos(omegaSearch.*timeData).*cos(omegaEarth.*timeData);
   

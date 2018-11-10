@@ -1,10 +1,11 @@
-function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)
-	if (nargin != 5)
-		error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut)');
+function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut,seattleLat,seattleLong,compassDir,startTime)
+
+	if (nargin != 9)
+		error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut,seattleLat,seattleLong,compassDir,startTime)');
 	endif
   
 	f0 = 1.9338e-3;
-	numBETAVal = columns(createSineComponents(1,1));
+	numBETAVal = columns(createSineComponents(1,1,seattleLat,seattleLong,compassDir,startTime));
 	endCount = rows(frequencies);
 
 	%Creates array to collect chunk values for mean/stdev
@@ -31,10 +32,12 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 		endfor
 		endCount = endCount - 1;
   	endif
-		
+	
+	%Outputs total number of frequencies to scan	
 	if (displayOut)
 		endCount
 	endif
+	
 	%Runs the fitter over each bin to find the amplitude at each frequency
 	for secCount = 1:rows(driftFix)
 		if (displayOut)
@@ -45,8 +48,12 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 				count
 				fflush(stdout);
 			endif
-			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count));
-			if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) || noRes)
+			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),seattleLat,seattleLong,compassDir,startTime);
+
+			if(noRes)
+				designX = designX(:,1:numBETAVal - 2);
+			endif
+			if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) && !noRes)
 				designX = designX(:,1:numBETAVal - 2);
 				if (!noRes)
 					frequencies(count)
@@ -65,17 +72,14 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 			compVar(count,1:columns(COV),secCount) = diag(COV)';
        		endfor
      	endfor
-	%Weights smaller variance more heavily
-	compVar = 1 ./ compVar;
 	
 	%Performs weighted average using variances of OLS fit
 	if (rows(driftFix) > 1)
 		%Weighted average over different bin sizes
     		valAvg = mean(valueStuff,3);
-		%valAvg = sum(valueStuff.*compVar,3)./sum(compVar,3);
+
     		%Takes stdev of central values to more accurately represent real error
 		ampError = std(valueStuff,0,3)./size(valueStuff,3);
-    		%ampError = 1 ./ sqrt(sum(compVar,3)); %Weighted average error
 	else %If only one bin
     		valAvg = valueStuff;
     		ampError = zeros(rows(compOut),columns(compOut));
@@ -85,7 +89,7 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
   	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,8) + i.*valAvg(:,7),valAvg(:,9),valAvg(:,10)];
 	
 	%Adds errors on real/imaginary components to find error of modulus
-	modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2) + (valAvg(:,1).^2).*(ampError(:,1).^2)));
+	modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2)+(valAvg(:,1).^2).*(ampError(:,1).^2)));
  
 	%Returns
   	ampOut = compAvg;
