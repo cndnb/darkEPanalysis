@@ -7,6 +7,11 @@ if(!exist('O'))
 endif
 cData = O;
 
+seattleLat = pi/4;
+seattleLong = pi/4;
+compassDir = pi/6;
+startTime = 0;
+
 I = 378/(1e7);                                                                    
 f0 = 1.9338e-3;                                                                 
 Q = 500000;                                                                     
@@ -16,7 +21,7 @@ omegaEarth = 2*pi*(1/86164.0916);
 
 freqArray = (0:(rows(cData)/2))/(rows(cData));
 freqArray = freqArray';
-tau = transferFunction(freqArray,kappa,f0,Q);
+tau = transferFunction(freqArray,kappa,f0,Q,0);
 
 dFX = [ones(rows(cData),1),(1:rows(cData))',sin(cData(:,1).*omegaEarth),cos(cData(:,1).*omegaEarth)];
 [dFB,dFS,dFR,dFERR,dFCOV] = ols2(cData(:,2),dFX);
@@ -39,12 +44,12 @@ pause();
 
 collectionArray = ones(rows(freqArray),3);
 cAS = ones(rows(freqArray),3);
-covArray = ones(6,6,rows(freqArray));
+covArray = ones(12,12,rows(freqArray));
 rows(freqArray)
 for freq = 2+startVal:rows(freqArray) - 1 - endVal
 	freq
 	fflush(stdout);
-	designX = createSineComponents(cData(:,1),freqArray(freq));
+	designX = createSineComponents(cData(:,1),freqArray(freq),seattleLat,seattleLong,compassDir,startTime);
 	[b,s,r,err,cov] = ols2(cData(:,2),designX);
 	covArray(:,:,freq) = cov;
 	[bZ,s,r,err,cov] = ols2(cData(:,2),designX(:,1:2));

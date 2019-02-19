@@ -24,9 +24,9 @@ global oED = 2*pi*(1/86400);
 
 %Specific pendulum position data
 %%Latitude, longitude, and compass direction to be input as decimal degrees
-seattleLat = 47.6593743;
-seattleLong = -122.30262920000001;
-compassDir = 30;
+degSeattleLat = 47.6593743;
+degSeattleLong = -122.30262920000001;
+degCompassDir = 30;
 %global dipoleMag = 1;
 %
 %%Defining the X vector at January 1st 2000 00:00 UTC
@@ -38,7 +38,10 @@ global vernalEqLong = 68.1166667;
 %
 %%Prepares seattleLat in terms of equatorial cordinates at January 1, 2000 00:00:00 UTC
 %%This is the angle of seattleLat from the X vector
-seattleLong = (180/pi)*((pi/180)*(seattleLong + vernalEqLong)-omegaEarth*6939300);
+%%Additionally converts all angles to radians
+seattleLong = ((pi/180)*(degSeattleLong + vernalEqLong)-omegaEarth*6939300);
+seattleLat = (pi/180)*degSeattleLat;
+compassDir = (pi/180)*degCompassDir;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% FITTER PROPERTIES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,9 +54,9 @@ numBETAVal = columns(createSineComponents(1,1,seattleLat,seattleLong,compassDir,
 linearColumn = numBETAVal - 3;
 
 %Start of frequency scan
-startFreq = 1e-4;
+startFreq = 1e-3;
 %End frequency scan
-stopFreq = 5e-4;
+stopFreq = 1e-2;
 
 %Number of days in the data considered
 daysInclude = 0;
@@ -100,29 +103,9 @@ if (!exist('d'))
   %d = O;
 endif
 
-newD = d;
-%newD = [d(1:140000,:);d(146000:2*86164,:)];
-
-%newD = [d(1:100000,:);d(2*86164:4*86164,:)];
-
-%newD = [d(2*86164:6*86164,:)];
-%newD = d(2*86164:4*86164,:);
-
-%newD = d(1:6*86164-20000,:); 
-%newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-%newD = d(4*86164+25000:5*86164,:);
-%newD = d(1:2*86164,:);
-
-%newD = d(1:6*86164-20000,:); 
-%newD = [d(21000:86164-20000,:);d(2*86164:3*86164-20000,:);d(3*86164:4*86164,:);d(4*86164:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-%newD = d(1:5*86164,:);
 %newD = d;
-%newD = [d(4*86164 + 22000:5*86164,:);d(5*86164+30000:6*86164-20000,:)];
-%newD = blah;
-%newD = [d(:,1),d(:,2)];
-%newD = [d(195000:235000,:);d(370000:410000,:)];
-%newD = d(370000:410000,:);
 
+newD = d(200000:400000,:);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -302,12 +285,6 @@ title('Torque vs frequency parallel to gamma');
 %! test dispAmpTF
 %! disp('createSineComponents');
 %! test createSineComponents
-%! disp('frequencyVariance');
-%! test frequencyVariance
-%! disp('specFreqAmp');
-%! test specFreqAmp
-%! disp('weightedOLS');
-%! test weightedOLS
 %! disp('transferFunction');
 %! test transferFunction
 %! disp('twoPointTransfer');

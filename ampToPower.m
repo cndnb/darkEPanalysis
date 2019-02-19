@@ -31,11 +31,13 @@ endfunction
 
 %!test
 %! freq = pi; kappa = 2; f0 = 1.9e-3; Q = 500000; %Initialize random variables
-%! testMatrix = [3+4i,3+4i,3+4i]; %Easy to calculated numbers in test matrix
-%! tAmp = abs((3+4i)/transferFunction(freq,kappa,f0,Q)); %Expected (comparison) value of FAMP from test matrix
-%! tErr = abs(sqrt(((3^2)/(3^2+4^2))*(3^2)+((4^2)/(3^2+4^2))*(4^2))/transferFunction(freq,kappa,f0,Q)); %Expected (comparison) value of FERR from test matrix
+%! isExternal = 0;
+%! testMatrix = [3+4i,3+4i,3+4i]; %Easy to calculate numbers in test matrix
+%! tAmp = abs((3+4i)/transferFunction(freq,kappa,f0,Q,isExternal)); %Expected (comparison) value of FAMP from test matrix
+%! tErr = abs(sqrt(((3^2)/(3^2+4^2))*(3^2)+((4^2)/(3^2+4^2))*(4^2))/transferFunction(freq,kappa,f0,Q,isExternal)); %Expected (comparison) value of FERR from test matrix
 %! compAmp = [freq,tAmp,tAmp,tAmp];
 %! compErr = [freq,tErr,tErr,tErr];
-%! [outAmp,outErr] = ampToPower(testMatrix,freq,kappa,f0,Q,1,0,1); %Actual function output of FAMP/FERR
+%! [outAmp,outErr] = ampToPower(testMatrix,freq,kappa,f0,Q,1,0,isExternal); %Actual function output of FAMP/FERR
 %! assert(compAmp,outAmp)
-%! %assert(compErr == outErr)
+%! %assert(compErr == outErr) % FIX ERROR OUTPUT
+%! isExternal = 1; %FIX THIS CASE

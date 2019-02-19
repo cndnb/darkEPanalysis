@@ -43,13 +43,15 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 		if (displayOut)
 			secCount
 		endif
+		constantMultiples = preCalcComponents(driftFix{secCount,1}(:,1),seattleLat,seattleLong,compassDir,startTime);
 		for count = startCount:endCount
 			if (displayOut)
 				count
 				fflush(stdout);
 			endif
-			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),seattleLat,seattleLong,compassDir,startTime);
-
+			
+			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),constantMultiples);
+:w
 			if(noRes)
 				designX = designX(:,1:numBETAVal - 2);
 			endif
@@ -64,7 +66,7 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
           			%Prevents linear and constant term from becoming degenerate
           			designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
         		endif
-
+			
 			[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
 
 			%Adds data to each column in collection arrays
@@ -98,6 +100,10 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 endfunction
 
 %!test %Checks that each column is equal to specAmpFreq at that frequency
+%! seattleLat = pi/4;
+%! seattleLong = pi/4;
+%! compassDir = pi/6;
+%! startTime = 0;
 %! t= 1:2*86164; t=t';
 %! Amp = 1;
 %! freq = (1/100);
@@ -112,24 +118,17 @@ endfunction
 %! freqArray = (0:rows(fData)/2)'./rows(fData);
 %! freqArray([1;end],:) = []; 
 %!
-%! for isWeighted = 0:1
-%! 	[compAvg,compOut] = dispAmpTF(dataDivisions,freqArray,linearColumn,isWeighted,0);
-%!
-%! 	compareArray = zeros(rows(freqArray),6,rows(dataDivisions));
-%!  compareVar = zeros(rows(freqArray),6,rows(dataDivisions));
+%! [compAvg,compOut] = dispAmpTF(dataDivisions,freqArray,linearColumn,1,1,seattleLat,seattleLong,compassDir,startTime);
+%! compareArray = zeros(rows(freqArray),6,rows(dataDivisions));
+%! compareVar = zeros(rows(freqArray),6,rows(dataDivisions));
 %! 	for secCount = 1:rows(dataDivisions)
 %!  		for count = 1:rows(freqArray)
 %!    			designX = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count));
-%!         BETA = 0;
-%!    			if(isWeighted)
-%!    				[BETA,COV] = specFreqAmp(dataDivisions{secCount,1}(:,1:2),designX,dataDivisions{secCount,1}(:,3));
-%!    			else
-%!   				  [BETA,SIGMA,R,ERR,COV] = ols2(dataDivisions{secCount,1}(:,2),designX);
-%!				    BETA = BETA';
-%!   			  endif
-%!			    compareVar(count,:,secCount) = diag(COV)';
-%!   			  compareArray(count,:,secCount) = BETA;
-%! 		  endfor
+%!   			[BETA,SIGMA,R,ERR,COV] = ols2(dataDivisions{secCount,1}(:,2),designX);
+%!			BETA = BETA';
+%!			compareVar(count,:,secCount) = diag(COV)';
+%!   			compareArray(count,:,secCount) = BETA;
+%! 		endfor
 %!	endfor
 %!	fCA = sum(compareArray.*compareVar,3)./sum(compareVar,3);
 %!	fCA = [fCA(:,2) + i.*fCA(:,1),fCA(:,4) + i.*fCA(:,3),fCA(:,6) + i.*fCA(:,5)];

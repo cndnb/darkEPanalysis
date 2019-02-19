@@ -48,14 +48,16 @@ endfunction
 %!test
 %! t = 1:10000; t=t';
 %! fData = [t,sin((2*pi*1/100).*t)];
-%! torqueData = [t,zeros(rows(t),1)];
+%! torqueData = cell(1,2);
+%! torqueData{1,1} = [t,zeros(rows(t),1)];
+%! torqueData{1,2} = .99; %Threshold
 %! areaRemove = [500,500];
-%! threshold = .99;
-%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
+%! externalRemove = zeros(rows(fData),1);
+%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,externalRemove,areaRemove,0);
 %! assert(rTime,fData);
 %! pointEarthquake = 5001;
-%! torqueData(pointEarthquake,2) = 1;
-%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,threshold,areaRemove,0);
-%! assert(rTorque,[t,zeros(rows(torqueData),1)]);
+%! torqueData{1,1}(pointEarthquake,2) = 1;
+%! [rTime,rTorque] = removeEarthquakes(fData,torqueData,externalRemove,areaRemove,0);
+%! assert(rTorque,[t,zeros(rows(torqueData{1,1}),1)]);
 %! cTime = fData; cTime(pointEarthquake-areaRemove(1,1):pointEarthquake+areaRemove(1,2),:) = [];
 %! assert(rTime,cTime);
