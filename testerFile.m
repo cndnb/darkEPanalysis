@@ -49,9 +49,12 @@ compassDir = (pi/180)*degCompassDir;
 startTime = 0;
 
 %Number of design matrix columns
-numBETAVal = columns(createSineComponents(1,1,seattleLat,seattleLong,compassDir,startTime));
-%Linear terms need constant subtracted off, need to know which column this will
-linearColumn = numBETAVal - 3;
+%columnSelector = [sinZ,cosZ,sinperpX,cosparaX,sinparaX,cosparaX,drift,constant,sinf0,cosf0]
+%columnSelector entries = 1 will be included in the fit.
+columnSelector = [1,1,1,1,1,1,1,1,0,0];
+
+%Boolean value, 1 will run a torsion filter at the resonance frequency.
+torsionFiltered = 1;
 
 %Start of frequency scan
 startFreq = 1e-3;
@@ -143,7 +146,7 @@ while(count > 0)
 	count = count - 1;
 endwhile
 
-%Checks the total length of the data
+%Checks the total length of the data 
 removed
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
@@ -187,6 +190,7 @@ ylabel('Angle');
 %endCout = total frequency band divided by the smallest frequency jump
 %Integer so that it can be used for indexing
 
+%Finds index of start frequency and end frequency and modifies freqArray to run between them
 freqArray = 1:(floor(fullLength/2));
 freqArray = [0,freqArray];
 freqArray = freqArray';
@@ -212,13 +216,19 @@ indStart = minIndStart;
 indEnd = minIndEnd;
 freqArray = freqArray(indStart:indEnd,1);
 
+disp("Starting Frequency:");
 freqArray(1,1)
+disp("Ending Frequency:");
 freqArray(end,1)
+disp("Number of frequencies to scan:");
 rows(freqArray)
 fflush(stdout);
+
+%Pause added to frequencies can be checked, and the length of run time can be estimated. Also the torque plots should be considered to make sure that the correct data is being analyzed.
 pause();
 
-[compAvg,modErr] = dispAmpTF(driftFix,freqArray,linearColumn,torsionFiltered,showOut,seattleLat,seattleLong,compassDir,startTime);
+
+[compAvg,modErr] = dispAmpTF(driftFix,freqArray,columnSelector,showOut,seattleLat,seattleLong,compassDir,startTime);
 
 %%%%%%%%%%%%%%%%%%%%%%%%% CONVERSION TO TORQUE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -291,5 +301,7 @@ title('Torque vs frequency parallel to gamma');
 %! test twoPointTransfer
 %! disp('ampToPower');
 %! test ampToPower
+%! disp('preCalcComponents');
+%! test preCalcComponents
 %! disp('testerFile');
 %! fflush(stdout);

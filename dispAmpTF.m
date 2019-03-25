@@ -1,15 +1,25 @@
-function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut,seattleLat,seattleLong,compassDir,startTime)
+function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,displayOut,seattleLat,seattleLong,compassDir,startTime)
+%driftFix: cell array, each day of data is its own cell element in rows.
+%frequencies: column vector of frequencies to be scanned.
+%columnSelector is a 1x10 matrix, 0 in entry turns off column, 1 in entry uses column in fit.
+%displayOut = 0 -> does not show output; = 1 -> displays output on command line.
 
-	if (nargin != 9)
-		error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,displayOut,seattleLat,seattleLong,compassDir,startTime)');
+	if (nargin != 8)
+		error('[AMP,ERR] = dispAmpTF(driftFix,frequencies,columnSelector,displayOut,seattleLat,seattleLong,compassDir,startTime)');
+	endif
+	if (size(columnSelector) != [1,10])
+		error('columnSelector must be 1x10 matrix');
 	endif
   
+
+	
 	f0 = 1.9338e-3;
-	numBETAVal = columns(createSineComponents(1,1,seattleLat,seattleLong,compassDir,startTime));
+	numBETAVal = sum(columnSelector);
 	endCount = rows(frequencies);
+	indInsert = find(columnSelector);
 
 	%Creates array to collect chunk values for mean/stdev
-	valueStuff = zeros(endCount,numBETAVal,rows(driftFix));
+	valueStuff = zeros(endCount,10,rows(driftFix));
 	compVar = zeros(endCount,numBETAVal,rows(driftFix));
 	compOut = zeros(endCount,3,rows(driftFix));
 	errOut = zeros(endCount,3,rows(driftFix));
@@ -18,17 +28,26 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 	startCount = 1;
 
 	%Catches first frequency equal to zero
-	if(frequencies(1) == 0)
+	if(frequencies(1) == 0 && columnSelector(2) == 1)
 		for count = 1:rows(driftFix)
-			valueStuff(1,:,count) = [0,mean(driftFix{count,1}(:,2)),0,0,0,0];
+			if(columnSelector(1) == 0)
+				valueStuff(1,1,count) = mean(driftFix{count,1}(:,2));
+			else
+				valueStuff(1,2,count) = mean(driftFix{count,1}(:,2));
+			endif
 		endfor
 		startCount = 2;
   	endif
-  	if(frequencies(end) == .5)
+	%Catches last frequency equal to Nyquist
+  	if(frequencies(end) == .5 && columnSelector(2) == 1)
 		for count = 1:rows(driftFix)
-			designX = sin(pi*driftFix{count,1}(:,1));
+			designX = cos(pi*driftFix{count,1}(:,1));
 			[altB,altS,altERR,altR,altCOV] = ols2(driftFix{count,1}(:,2),designX);
-			valueStuff(end,:,count) = [altB,0,0,0,0,0];
+			if(columnSelector(1) == 0)
+				valueStuff(end,1,count) = altB;
+			else
+				valueStuff(end,2,count) = altB;
+			endif
 		endfor
 		endCount = endCount - 1;
   	endif
@@ -50,27 +69,21 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 				fflush(stdout);
 			endif
 			
-			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),constantMultiples);
-:w
-			if(noRes)
-				designX = designX(:,1:numBETAVal - 2);
-			endif
-			if (abs(f0 - frequencies(count)) < 4*(frequencies(2,1) - frequencies(1,1)) && !noRes)
-				designX = designX(:,1:numBETAVal - 2);
-				if (!noRes)
-					frequencies(count)
-            				fflush(stdout);
-          			endif
-        		endif
-        		if (linearColumn != 0)
-          			%Prevents linear and constant term from becoming degenerate
-          			designX(:,linearColumn) = designX(:,linearColumn) .- (driftFix{secCount,1}(1,1));
-        		endif
-			
+			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),constantMultiples,columnSelector);
+			lBTA = columns(designX);
+			BETA = zeros(lBTA,1);
+			COV = zeros(lBTA,lBTA);	
+			try
 			[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
+			catch
+				frequencies(count)
+				fflush(stdout);
+			end_try_catch
 
 			%Adds data to each column in collection arrays
-			valueStuff(count,1:rows(BETA),secCount) = BETA';
+			for indIn = 1:columns(indInsert)
+				valueStuff(count,indInsert(indIn),secCount) = BETA'(indIn);
+			endfor
 			compVar(count,1:columns(COV),secCount) = diag(COV)';
        		endfor
      	endfor
@@ -91,7 +104,8 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
   	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,8) + i.*valAvg(:,7),valAvg(:,9),valAvg(:,10)];
 	
 	%Adds errors on real/imaginary components to find error of modulus
-	modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2)+(valAvg(:,1).^2).*(ampError(:,1).^2)));
+	modErr = 1;
+	%modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2)+(valAvg(:,1).^2).*(ampError(:,1).^2)));
  
 	%Returns
   	ampOut = compAvg;
@@ -99,86 +113,23 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,linearColumn,noRes,dis
 
 endfunction
 
-%!test %Checks that each column is equal to specAmpFreq at that frequency
-%! seattleLat = pi/4;
-%! seattleLong = pi/4;
-%! compassDir = pi/6;
-%! startTime = 0;
-%! t= 1:2*86164; t=t';
-%! Amp = 1;
-%! freq = (1/100);
-%! chunkSize = 10;
-%! fData = [t,Amp.*sin((2*pi*freq).*t)];
-%! weightVal = resonanceVariance(fData,chunkSize);
-%! fData = [fData,weightVal];
-%! dataDivisions = cell(2,1);
-%! dataDivisions{1,1} = fData(1:86164,:);
-%! dataDivisions{2,1} = fData(86165:2*86164,:);
-%! linearColumn = 0;
-%! freqArray = (0:rows(fData)/2)'./rows(fData);
-%! freqArray([1;end],:) = []; 
+%!test %Shows that reducing problem to sin cos fit matches fft.
+%! seattleLat = 0; seattleLong = 0; compassDir = 0; startTime = 0; 
+%! t = (1:86400/100)';
+%! columnSelector = [1,1,0,0,0,0,0,0,0,0];
+%! fData = [t,stdnormal_rnd(rows(t),1)];
+%! driftFix = cell(1,1); driftFix{1,1} = fData;
+%! 
+%! freqArray = (0:rows(t)/2)'./rows(t);
+%! fftOut = (2/rows(t)).*fft(fData(:,2))(1:rows(t)/2 + 1,:);fftOut([1,end],:) = fftOut([1,end],:)./2;
+%! 
+%! olsOut = ones(rows(freqArray),1);
+%! [ampOut,errOut] = dispAmpTF({fData},freqArray,columnSelector,0,seattleLat,seattleLong,compassDir,startTime);
+%! olsOut = ampOut(:,1);
 %!
-%! [compAvg,compOut] = dispAmpTF(dataDivisions,freqArray,linearColumn,1,1,seattleLat,seattleLong,compassDir,startTime);
-%! compareArray = zeros(rows(freqArray),6,rows(dataDivisions));
-%! compareVar = zeros(rows(freqArray),6,rows(dataDivisions));
-%! 	for secCount = 1:rows(dataDivisions)
-%!  		for count = 1:rows(freqArray)
-%!    			designX = createSineComponents(dataDivisions{secCount,1}(:,1),freqArray(count));
-%!   			[BETA,SIGMA,R,ERR,COV] = ols2(dataDivisions{secCount,1}(:,2),designX);
-%!			BETA = BETA';
-%!			compareVar(count,:,secCount) = diag(COV)';
-%!   			compareArray(count,:,secCount) = BETA;
-%! 		endfor
-%!	endfor
-%!	fCA = sum(compareArray.*compareVar,3)./sum(compareVar,3);
-%!	fCA = [fCA(:,2) + i.*fCA(:,1),fCA(:,4) + i.*fCA(:,3),fCA(:,6) + i.*fCA(:,5)];
-%!	ccO = [compareArray(:,2,:) + i.*compareArray(:,1,:),compareArray(:,4,:) + i.*compareArray(:,3,:),compareArray(:,6,:) + i.*compareArray(:,5,:)];
-%!	assert(fCA,compAvg);
-%!	assert(ccO,compOut);
-%! endfor
+%! oC = preCalcComponents(0,seattleLat,seattleLong,compassDir,startTime);
+%! rO = abs(abs(olsOut./oC(1,1))./abs(fftOut) - 1);
+%! assert(rO < 1e-9);
 
 %!test
-%! t = 1:86164; t=t';
-%! Amp = 1e-16;
-%! f = 2*pi*(9e-3);
-%! fData = [t,Amp.*sin(f.*t)];
-%! dX = [ones(rows(t),1),t];
-%! [b,s,r,err,cov] = ols2(fData(:,2),dX);
-%! fData(:,2) = fData(:,2) - dX*b;
-%! dD = cell(1,1);
-%! dD{1,1} = fData;
-%!
-%! startFreq = 1e-3;
-%! stopFreq = 1e-2;
-%! fullLength = rows(fData);
-%! freqArray = 1:(floor(fullLength/2));
-%! freqArray = [0,freqArray];
-%! freqArray = freqArray';
-%! freqArray = freqArray./fullLength;
-%!
-%! tempStart = freqArray - startFreq.*ones(rows(freqArray),1);
-%! tempEnd = freqArray - stopFreq.*ones(rows(freqArray),1);
-%! pastMinStart = Inf;
-%! pastMinEnd = Inf;
-%! minIndStart = 0;
-%! minIndEnd = 0;
-%! for count = 1:rows(freqArray)
-%!  if (abs(tempStart(count)) < pastMinStart)
-%!    pastMinStart = abs(tempStart(count));
-%!    minIndStart = count;
-%!  endif
-%!  if (abs(tempEnd(count)) < pastMinEnd)
-%!    pastMinEnd = abs(tempEnd(count));
-%!    minIndEnd = count;
-%!  endif
-%! endfor
-%! indStart = minIndStart;
-%! indEnd = minIndEnd;
-%! freqArray = freqArray(indStart:indEnd,1);
-%!
-%! [compAvg,errOut] = dispAmpTF(dD,freqArray,0,0,0);
-%! fftOut = (2/rows(t)).*fft(fData(:,2));
-%! fftOut = fftOut(1:(rows(fftOut)/2 + 1),:);
-%! ratioPlot = abs(compAvg(:,1))./abs(fftOut(indStart:indEnd,:)) - 1;
-%! assert(ratioPlot < 1e-5);
-
+%! 
