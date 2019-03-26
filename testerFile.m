@@ -59,7 +59,10 @@ torsionFiltered = 1;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
-stopFreq = 1e-2;
+stopFreq = 1e-1;
+
+%Boolean to save analyzed data to file after run is complete
+saveData = 0;
 
 %Number of days in the data considered
 daysInclude = 0;
@@ -85,7 +88,7 @@ aCN = 1e-9;
 %% Earthquake removal parameters %%
 
 %number of seconds in a bin
-dayLength = 2*86164; %seconds
+dayLength = 86164; %seconds
 
 %This is the value above which torque is considered an earthquake
 baseThreshold = 2e-12;
@@ -106,9 +109,8 @@ if (!exist('d'))
   %d = O;
 endif
 
-%newD = d;
-
-newD = d(200000:400000,:);
+%This variable can be changed to remove bad data
+newD = d;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% EARTHQUAKE REMOVAL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -136,10 +138,11 @@ endif
 %Divides data into day length chunks
 driftFix  = dayDivision(noEarthquakes, daysInclude,dayLength,showOut);
 
+%Gets rid of chunks with less than half of dayLength of data
 removed = 0;
 count = rows(driftFix);
 while(count > 0)
-	if(rows(driftFix{count,1}) < 86164)
+	if(rows(driftFix{count,1}) < dayLength/2)
 		driftFix(count,:) = [];
 		removed = removed + 1;
 	endif
@@ -240,9 +243,11 @@ pause();
 thNoise = thermalNoise(FINALAMP(:,1),kappa,Q,Temp,f0,aCN,rows(checkLength),isExternal);
 gLim = torqueToGBL(thNoise);
 
-fileName = ['run0160',ctime(time)([5:7,9:10,21:end-1]),'(',num2str(startFreq),'-',num2str(stopFreq),')'];
-save(fileName,'FINALAMP','FINALERR','gLim');
-disp(['Saved run to file ',fileName]);
+if(saveData)
+	fileName = ['run0160',ctime(time)([5:7,9:10,21:end-1]),'(',num2str(startFreq),'-',num2str(stopFreq),')'];
+	save(fileName,'FINALAMP','FINALERR','gLim');
+	disp(['Saved run to file ',fileName]);
+endif
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

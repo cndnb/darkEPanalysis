@@ -34,3 +34,9 @@ endfunction
 
 %!test
 %! assert(preCalcComponents(0,0,0,0,0) == [1,0,0]);
+
+%!test
+%! assert(preCalcComponents(0,0,0,-pi/2,0),[0,1,0],eps);
+
+%!test
+%! assert(preCalcComponents(0,0,pi/2,pi/2,0),[0,0,1],eps);

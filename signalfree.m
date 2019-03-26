@@ -2,20 +2,18 @@
 %test torqueSim
 
 %Make some time
-t = 1:1e6;t=t';
+t = 1:2*86400;t=t';
 
 
 A = 1e-16;
-omegaSearch = 2*pi*9e-3;
-omegaEarth = 2*pi*(1/86164.0916);
+f = 9e-3;
+%omegaEarth = 2*pi*(1/86164.0916);
 
-finalSignal = zeros(rows(t),1);%A*sin(omegaSearch.*t);
+cM = preCalcComponents(t,seattleLat,seattleLong,compassDir,startTime);
+cS = [1,0,0,0,0,0,0,0,0,0];
 
-%A.*sin(omegaSearch.*t).*sin(omegaEarth.*t);
-
-
-%A*(sin(omegaSearch*t));%+sin(omegaSearch*t).*cos(omegaEarth*t)+sin(omegaSearch*t).*sin(omegaEarth*t));
-
+finalSignal = A*createSineComponents(t,f,cM,cS);
+assert(columns(finalSignal) == 1);
 
 %Parameters of the experiment
 I = 378/1e7;                                                                    

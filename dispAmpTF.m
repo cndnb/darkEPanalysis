@@ -101,15 +101,11 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
   	endif
 	
 	%Adds weighted average values to be in complex amplitude format
-  	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,8) + i.*valAvg(:,7),valAvg(:,9),valAvg(:,10)];
+  	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,7),valAvg(:,8),valAvg(:,10) + i.*valAvg(:,9)];
 	
-	%Adds errors on real/imaginary components to find error of modulus
-	modErr = 1;
-	%modErr = sqrt((1 ./(valAvg(:,2).^2 + valAvg(:,1).^2)).*((valAvg(:,2).^2).*(ampError(:,2).^2)+(valAvg(:,1).^2).*(ampError(:,1).^2)));
- 
 	%Returns
   	ampOut = compAvg;
-	errOut = modErr;
+	errOut = ampError;
 
 endfunction
 
@@ -130,6 +126,3 @@ endfunction
 %! oC = preCalcComponents(0,seattleLat,seattleLong,compassDir,startTime);
 %! rO = abs(abs(olsOut./oC(1,1))./abs(fftOut) - 1);
 %! assert(rO < 1e-9);
-
-%!test
-%! 
