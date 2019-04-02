@@ -22,7 +22,6 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 	valueStuff = zeros(endCount,10,rows(driftFix));
 	compVar = zeros(endCount,numBETAVal,rows(driftFix));
 	compOut = zeros(endCount,3,rows(driftFix));
-	errOut = zeros(endCount,3,rows(driftFix));
 	ampError = zeros(endCount,numBETAVal,rows(driftFix));  
 
 	startCount = 1;
@@ -102,14 +101,15 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 	
 	%Adds weighted average values to be in complex amplitude format
   	compAvg = [valAvg(:,2) + i.*valAvg(:,1),valAvg(:,4) + i.*valAvg(:,3),valAvg(:,6) + i.*valAvg(:,5),valAvg(:,7),valAvg(:,8),valAvg(:,10) + i.*valAvg(:,9)];
+  	errAvg  = [ampError(:,2) + i.*ampError(:,1),ampError(:,4) + i.*ampError(:,3),ampError(:,6) + i.*ampError(:,5),ampError(:,7),ampError(:,8),ampError(:,10) + i.*ampError(:,9)];
 	
 	%Returns
   	ampOut = compAvg;
-	errOut = ampError;
+	errOut = errAvg;
 
 endfunction
 
-%!test %Shows that reducing problem to sin cos fit matches fft.
+%!test %Shows that reducing problem to sin cos fit matches fft. Somehow this broke
 %! seattleLat = 0; seattleLong = 0; compassDir = 0; startTime = 0; 
 %! t = (1:86400/100)';
 %! columnSelector = [1,1,0,0,0,0,0,0,0,0];
