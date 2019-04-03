@@ -81,7 +81,8 @@ endfunction
 %! f = rand(1)./10;
 %! columnSelector = [1,1,0,0,0,0,0,0,0,0];
 %! X = createSineComponents(t,f,cM,columnSelector);
-%! assert(X == genSineSeed(t,f)(:,1:2));
+%! compX = [sin(2*pi*f.*t),cos(2*pi*f.*t)];
+%! assert(X == compX);
 
 %!test
 %! b=1:86400;

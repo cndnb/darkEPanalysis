@@ -22,7 +22,7 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 	valueStuff = zeros(endCount,10,rows(driftFix));
 	compVar = zeros(endCount,numBETAVal,rows(driftFix));
 	compOut = zeros(endCount,3,rows(driftFix));
-	ampError = zeros(endCount,numBETAVal,rows(driftFix));  
+	ampError = zeros(endCount,6,rows(driftFix));  
 
 	startCount = 1;
 
@@ -93,10 +93,10 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
     		valAvg = mean(valueStuff,3);
 
     		%Takes stdev of central values to more accurately represent real error
-		ampError = std(valueStuff,0,3)./size(valueStuff,3);
+		    ampError(:,1:columns(valueStuff)) = std(valueStuff,0,3)./size(valueStuff,3);
 	else %If only one bin
     		valAvg = valueStuff;
-    		ampError = zeros(rows(compOut),columns(compOut));
+    		ampError = zeros(endCount,columns(valueStuff));
   	endif
 	
 	%Adds weighted average values to be in complex amplitude format
