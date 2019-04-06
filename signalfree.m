@@ -2,25 +2,25 @@
 %test torqueSim
 
 %Make some time
-t = 1:2*86400;t=t';
+t = 1:1250000;t=t';
 
 
-A = 1e-16;
-f = 9e-3;
+A = 3e-16;
+f = 5.772156649e-3;
 %omegaEarth = 2*pi*(1/86164.0916);
 
 cM = preCalcComponents(t,seattleLat,seattleLong,compassDir,startTime);
-cS = [1,0,0,0,0,0,0,0,0,0];
+cS = [0,0,1,1,0,0,0,0,0,0];
 
 finalSignal = A*createSineComponents(t,f,cM,cS);
-assert(columns(finalSignal) == 1);
+assert(columns(finalSignal) == 2);
 
 %Parameters of the experiment
 I = 378/1e7;                                                                    
 f0 = 1.9338e-3;                                                                 
 kappa = ((2*pi*f0)^2)*I;                                                        
 Q = 500000;                                                                     
-Temp = 273+24; 
+Temp = 0; 
 
 %Simulate a pendulum
 T= torqueSim(t,I, kappa,Q, Temp, finalSignal);
@@ -29,7 +29,7 @@ T= torqueSim(t,I, kappa,Q, Temp, finalSignal);
 AutocollimatorNoise = randn(size(t)) * 0.5e-9;
 
 %Generate measured angle output (THIS IS THE SAME AS THE FAKE DATASET!)
-O = [T(:,1) T(:,2) + AutocollimatorNoise];
+O = [T(:,1) T(:,2) ];%+ AutocollimatorNoise];
 
 %Re-compute torque
 accel = diff(diff(O(:,2)));

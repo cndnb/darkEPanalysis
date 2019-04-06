@@ -67,9 +67,6 @@ saveData = 0;
 %Number of days in the data considered
 daysInclude = 0;
 
-%How many periods of the specific frequency are included in weighted error fit
-chunkSize = 10;
-
 %boolean to show output on terminal
 showOut = 1;
 
