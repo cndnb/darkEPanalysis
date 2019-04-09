@@ -12,13 +12,16 @@ function rtn = riceDistribution(xIn,cVal,sDev)
 		error("riceDistribution - standard deviation must be positive");
 	endif
 	%Gives probability density for x given central value and standard deviation
-	rtn = (xIn/(sDev)^2)*exp(-(xIn^2+cVal^2)/(sDev^2))*besseli(0,(xIn*cVal)/(sDev^2));
+	rtn = (xIn./(sDev).^2).*exp(-(xIn.^2+cVal.^2)./(2*sDev.^2)).*besseli(0,(xIn.*cVal)/(sDev.^2));
 endfunction
 
 %!test
-%! t = (0:0.1:1000)';
+%! interval = 0.01;
+%! cVal = poissrnd(20);
+%! sDev = poissrnd(10) + 1;
+%! t = (0:interval:cVal + 10*sDev)';
 %! area = ones(rows(t)-1,1);
 %! for count = 1:rows(t)-1
-%!  area(count,1) = .5*(riceDistribution(t(count),10,5) + riceDistribution(t(count + 1),10,5))*0.1;
+%!  area(count,1) = riceDistribution((t(count) + t(count+1))./2,cVal,sDev)*interval;
 %! endfor
-%! assert(sum(area),1);
+%! assert(sum(area),1,1e-5);

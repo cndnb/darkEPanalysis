@@ -1,40 +1,50 @@
-function rtn = riceppf(cVal,sDev,pCN,cTol)
+function rtn = riceppf(cVal,sDev,pCN,cTol,xGuess)
 	if(sDev <= 0)
 		error("riceppf - sDev must be positive");
 	endif
 	if(cVal < 0)
 		error("riceppf - cVal must be non-negative");
 	endif
-	xGuess = cVal + 2*sDev
+
+	%Prevents running forever
+	maxCount = 100;
+	
+	%Starts method with guess value
 	x = xGuess;
 
+	%initialize variables
 	count = 1;
-	while(rCDF(x,cVal,sDev)/pCN > cTol & count < 100)
-		if(x < 0)
+	newX = 0;
+	while(count < maxCount)
+		%Sets new value with Newton's method
+		newX = x - ((rCDF(x,cVal,sDev) - pCN)/riceDistribution(x,cVal,sDev));
+		%Prevents overshooting from breaking the program
+		if(newX < 0)
 			x=1/(10*sDev);
+		else
+			%Recursion step
+			x = newX;
 		endif
-		x = x - ((rCDF(x,cVal,sDev) - pCN)/riceDistribution(x,cVal,sDev))
-		fflush(stdout);
+		%If the value gives accurate enough result, we are done
+		if(abs((rCDF(x,cVal,sDev)/pCN) - 1) < cTol)
+			break;
+		endif
 		count = count + 1;
 	endwhile
-
-	assert(1-marcumq(cVal/sDev,x/sDev),pCN,pCN*cTol);
+	
+	%If count == maxCount the return value does not necessarily have percent accuracy of cTol
+	if(count == maxCount)
+		warning("riceppf - precision not accurate");
+	endif
+	
+	%Returns value
 	rtn = x;
-endfunction
-
-%Gives the rice probability density at each x for given central value and standard deviation
-function rtn = riceDistribution(x,cVal,sDev)
-	rtn = (x/(sDev)^2)*exp(-(x^2 + cVal^2)/(sDev^2))*besseli(0,(x*cVal)/(sDev^2));
-endfunction
-
-%Gives the cumulative probability of the rice distribution for x give cVal and sDev
-function rtn = rCDF(x,cVal,sDev);
-	rtn = 1 - marcumq(cVal/sDev,x/sDev);
 endfunction
 
 %!test
 %! pCN = .95;
-%! cTol = .01;
-%! cVal = poissrnd(20); sDev = poissrnd(20) + 1;
-%! xOut = riceppf(cVal,sDev,pCN,cTol);
-%! assert(1-marcumq(cVal/sDev,xOut/sDev),pCN,cTol*pCN);
+%! cTol = eps
+%! cVal = poissrnd(40) 
+%! sDev = poissrnd(10) + 1
+%! xOut = riceppf(cVal,sDev,pCN,cTol,cVal + 2*sDev)
+%! assert(rCDF(xOut,cVal,sDev),pCN,cTol*pCN);
