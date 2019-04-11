@@ -234,7 +234,17 @@ pause();
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,modErr,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal);
+
+%Initializes array for 95% confidence value for each amplitude component
+cTol = 0.01;
+pCN = 0.95;
+ppfVal = ones(rows(FINALAMP),3);
+for count = 1:rows(ppfVal)
+	for count2 = 1:3
+		ppfVal(count,count2) = riceppf(FINALAMP(count,count2+1),FINALERR(count,count2+1),pCN,cTol,FINALAMP(count,count2+1) + 2*FINALERR(count,count2+1));
+	endfor
+endfor
 
 %Thermal noise limit calculation for torque and g_{B-L}
 thNoise = thermalNoise(FINALAMP(:,1),kappa,Q,Temp,f0,aCN,rows(checkLength),isExternal);

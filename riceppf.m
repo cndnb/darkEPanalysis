@@ -17,7 +17,7 @@ function rtn = riceppf(cVal,sDev,pCN,cTol,xGuess)
 	newX = 0;
 	while(count < maxCount)
 		%Sets new value with Newton's method
-		newX = x - ((rCDF(x,cVal,sDev) - pCN)/riceDistribution(x,cVal,sDev));
+		newX = x - ((rCDF(x,cVal,sDev) - pCN)./riceDistribution(x,cVal,sDev));
 		%Prevents overshooting from breaking the program
 		if(newX < 0)
 			x=1/(10*sDev);
