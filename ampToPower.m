@@ -1,6 +1,6 @@
 function [FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal)
 	if(nargin != 9)
-		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered)');
+		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal)');
 	endif
   
 	%Accumulation array
