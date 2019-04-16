@@ -51,11 +51,6 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 		endCount = endCount - 1;
   	endif
 	
-	%Outputs total number of frequencies to scan	
-	if (displayOut)
-		endCount
-	endif
-	
 	%Runs the fitter over each bin to find the amplitude at each frequency
 	for secCount = 1:rows(driftFix)
 		if (displayOut)

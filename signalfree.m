@@ -2,11 +2,11 @@
 %test torqueSim
 
 %Make some time
-t = 1:1250000;t=t';
+t = 1:2*86400;t=t';
 
 
 A = 3e-16;
-f = 5.772156649e-3;
+f = 2e-3;
 %omegaEarth = 2*pi*(1/86164.0916);
 
 cM = preCalcComponents(t,seattleLat,seattleLong,compassDir,startTime);

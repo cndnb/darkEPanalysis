@@ -59,7 +59,7 @@ torsionFiltered = 1;
 %Start of frequency scan
 startFreq = 1e-3;
 %End frequency scan
-stopFreq = 1e-1;
+stopFreq = 1e-2;
 
 %Boolean to save analyzed data to file after run is complete
 saveData = 0;
@@ -147,7 +147,6 @@ while(count > 0)
 endwhile
 
 %Checks the total length of the data 
-removed
 checkLength = cell2mat(driftFix(:,1));
 fullLength = checkLength(end,1) - checkLength(1,1);
 
@@ -167,18 +166,18 @@ endfor
 
 checkRes = cell2mat(noRes);
 
-figure(6);
-plot(torqueCell{1,1}(3:(end - 2),1),torqueCell{1,1}(3:(end - 2),2),torqueCell{1,1}(3:(end - 2),1),...
-torqueCell{1,2}.*ones(rows(torqueCell{1,1})-4,1));
-title('Threshold plotted on torque');
-xlabel('Time (s)');
-ylabel('Torque (N m)');
+%figure(6);
+%plot(torqueCell{1,1}(3:(end - 2),1),torqueCell{1,1}(3:(end - 2),2),torqueCell{1,1}(3:(end - 2),1),...
+%torqueCell{1,2}.*ones(rows(torqueCell{1,1})-4,1));
+%title('Threshold plotted on torque');
+%xlabel('Time (s)');
+%ylabel('Torque (N m)');
 
-figure(8);
-plot(checkRes(:,1),checkRes(:,2));
-title('drift, earthRotation, and resonance removed');
-xlabel('Time (s)');
-ylabel('Angle');
+%figure(8);
+%plot(checkRes(:,1),checkRes(:,2));
+%title('drift, earthRotation, and resonance removed');
+%xlabel('Time (s)');
+%ylabel('Angle');
 
 %%%%%%%%%%%% AMPLITUDE(TIME) => AMPLITUDE(FREQUENCY) CONVERSION  %%%%%%%%%%%%%%%%
 
@@ -222,10 +221,14 @@ disp("Ending Frequency:");
 freqArray(end,1)
 disp("Number of frequencies to scan:");
 rows(freqArray)
+disp("Number of days");
+rows(driftFix)
+disp("Number of days removed");
+removed
 fflush(stdout);
 
 %Pause added to frequencies can be checked, and the length of run time can be estimated. Also the torque plots should be considered to make sure that the correct data is being analyzed.
-pause();
+pause(5);
 
 
 [compAvg,modErr] = dispAmpTF(driftFix,freqArray,columnSelector,showOut,seattleLat,seattleLong,compassDir,startTime);
@@ -234,7 +237,7 @@ pause();
 
 %Sums in quadrature amplitudes to find single value for each coordinate direction,
 %Divides by the transfer function to find the torque amplitude for each frequency
-[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal);
+[FINALAMP, FINALERR,FINALPHASE] = ampToPower(compAvg,modErr,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal);
 
 %Thermal noise limit calculation for torque and g_{B-L}
 thNoise = thermalNoise(FINALAMP(:,1),kappa,Q,Temp,f0,aCN,rows(checkLength),isExternal);

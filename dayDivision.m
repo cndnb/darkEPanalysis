@@ -15,11 +15,6 @@ function ret = dayDivision(data,daysInclude,dayLength,showOut)
 	%Remove starting index from maxDays
   	maxDays = rows(indVal) - 1;
   
-	if(showOut)
-  		data(indVal,1)
-  		fflush(stdout);
-	endif
-  
   	%Initialize accumulation array
   	dataDivisions = cell(maxDays,1);
   
