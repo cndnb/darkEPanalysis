@@ -244,11 +244,11 @@ pause(5);
 cTol = 0.01;
 pCN = 0.95;
 ppfVal = ones(rows(FINALAMP),3);
-for count = 1:rows(ppfVal)
-	for count2 = 1:3
-		ppfVal(count,count2) = riceppf(FINALAMP(count,count2+1),FINALERR(count,count2+1),pCN,cTol,FINALAMP(count,count2+1) + 2*FINALERR(count,count2+1));
-	endfor
-endfor
+%for count = 1:rows(ppfVal)
+%	for count2 = 1:3
+%		ppfVal(count,count2) = riceppf(FINALAMP(count,count2+1),FINALERR(count,count2+1),pCN,cTol,FINALAMP(count,count2+1) + 2*FINALERR(count,count2+1));
+%	endfor
+%endfor
 
 
 %Thermal noise limit calculation for torque and g_{B-L}

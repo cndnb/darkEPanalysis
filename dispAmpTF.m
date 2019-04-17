@@ -11,12 +11,19 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 		error('columnSelector must be 1x10 matrix');
 	endif
   
-
+  %Creates matrix to put beta values into correct column of valueStuff
+  fitMat = diag(columnSelector);
+  countDown = columns(fitMat);
+  while(countDown > 0)
+     if(!columnSelector(countDown))
+     fitMat(:,countDown) = [];
+   endif
+   countDown = countDown - 1;
+  endwhile
 	
 	f0 = 1.9338e-3;
 	numBETAVal = sum(columnSelector);
 	endCount = rows(frequencies);
-	indInsert = find(columnSelector);
 
 	%Creates array to collect chunk values for mean/stdev
 	valueStuff = zeros(endCount,10,rows(driftFix));
@@ -75,9 +82,7 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 			end_try_catch
 
 			%Adds data to each column in collection arrays
-			for indIn = 1:columns(indInsert)
-				valueStuff(count,indInsert(indIn),secCount) = BETA'(indIn);
-			endfor
+				valueStuff(count,:,secCount) = (fitMat*BETA)';
 			compVar(count,1:columns(COV),secCount) = diag(COV)';
        		endfor
      	endfor
