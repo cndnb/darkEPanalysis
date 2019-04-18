@@ -10,8 +10,8 @@ pkg load signal;
 
 %Pendulum and balance parameters, in SI units:
 global I = 378/(1e7);                                                                    
-%global f0 = 1.9338e-3; %Fake data f0
-global f0 = 0.0019295; %Real data f0
+global f0 = 1.9338e-3; %Fake data f0
+%global f0 = 0.0019295; %Real data f0
 global Q = 500000;                                                                     
 global Temp = 273+24;  
 global kappa = (2*pi*f0)^2 * I;
@@ -53,8 +53,6 @@ startTime = 0;
 %columnSelector entries = 1 will be included in the fit.
 columnSelector = [1,1,1,1,1,1,1,1,0,0];
 
-%Boolean value, 1 will run a torsion filter at the resonance frequency.
-torsionFiltered = 1;
 
 %Start of frequency scan
 startFreq = 1e-3;
@@ -74,7 +72,7 @@ showOut = 1;
 sampleInterval = 1; %seconds
 
 %Boolean to use torsion filter
-torsionFiltered = 1;
+torsionFiltered = 0;
 
 %Boolean for type of damping
 isExternal = 0;

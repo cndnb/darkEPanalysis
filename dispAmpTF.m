@@ -73,13 +73,24 @@ function [ampOut,errOut] = dispAmpTF(driftFix,frequencies,columnSelector,display
 			designX = createSineComponents(driftFix{secCount,1}(:,1),frequencies(count),constantMultiples,columnSelector);
 			lBTA = columns(designX);
 			BETA = zeros(lBTA,1);
+			BETA1 = zeros(2,1);
+			BETA2 = zeros(2,1);
+			BETA3 = zeros(2,1);
 			COV = zeros(lBTA,lBTA);	
-			try
-			[BETA,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX);
-			catch
-				frequencies(count)
-				fflush(stdout);
-			end_try_catch
+
+			if(any(fitMat(:,1)) && any(fitMat(:,2)))
+				[B1,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX(:,[1:2,7:end]));
+				BETA1 = B1(1:2);	
+			endif
+			if(any(fitMat(:,3)) && any(fitMat(:,4)))
+				[B2,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX(:,[3:4,7:end]));
+				BETA2 = B2(1:2);
+			endif
+			if(any(fitMat(:,5)) && any(fitMat(:,6)))
+				[B3,SIGMA,R,ERR,COV] = ols2(driftFix{secCount,1}(:,2),designX(:,5:end));
+				BETA3 = B3(1:2);
+			endif
+			BETA(1:6) = [BETA1;BETA2;BETA3];
 
 			%Adds data to each column in collection arrays
 				valueStuff(count,:,secCount) = (fitMat*BETA)';

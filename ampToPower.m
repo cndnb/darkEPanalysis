@@ -2,6 +2,9 @@ function [FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sam
 	if(nargin != 9)
 		error('[FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sampleInterval,torsionFiltered,isExternal)');
 	endif
+
+	%initialize variable for equatorial transfer function
+	omegaEarth = 2*pi*(1/86164.0916);
   
 	%Accumulation array
 	ampMod = ones(rows(freqArray),6); %1-Z, 2-PerpGamma 3-ParaGamma 4-drift 5-Constant offset 6-res freq
@@ -9,9 +12,19 @@ function [FAMP,FERR,FPHASE] = ampToPower(compAvg,errAvg,freqArray,kappa,f0,Q,sam
 
 	%Divides by transfer function to get power(frequency)
 	if(torsionFiltered)
-		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal)./twoPointTransfer(freqArray,f0,sampleInterval);
+		%Without special transfers for equatorial directions
+		%ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal)./twoPointTransfer(freqArray,f0,sampleInterval);
+
+		%Includes different transfer functions for equatorial directions
+		ampMod(:,1) = compAvg(:,1)./transferFunction(freqArray,kappa,f0,Q,isExternal)./twoPointTransfer(freqArray,f0,sampleInterval);
+		ampMod(:,2:3) = compAvg(:,2:3)./equatorialTransferFunction(freqArray,omegaEarth,I,kappa,Q,isExternal)./twoPointTransfer(freqArray,f0,sampleInterval);
 	else
-		ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal);
+		%Without special transfers for equatorial directions
+		%ampMod = compAvg./transferFunction(freqArray,kappa,f0,Q,isExternal);
+		
+		%Includes special transfers for equatorial directions
+		ampMod(:,1) = compAvg(:,1)./transferFunction(freqArray,kappa,f0,Q,isExternal);
+		ampMod(:,2:3) = compAvg(:,2:3)./equatorialTransferFunction(freqArray,omegaEarth,I,kappa,Q,isExternal);
 	endif
   
 	%Return
